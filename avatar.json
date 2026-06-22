@@ -1,0 +1,6 @@
+{
+	"author":"GNanimates",
+	"color":"#aaaaaa",
+	"autoScripts": ["main"],
+	"resources": ["*.nbs"]
+}
