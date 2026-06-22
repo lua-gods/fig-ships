@@ -39,7 +39,7 @@ local SCREEN = OVERLAY:newPart("camera","NONE")
 for i = 1, 20, 1 do
 	Dome:copy("dome")
 	:moveTo(SCREEN)
-	:setOpacity(0.1)
+	:setOpacity(0.15)
 	:scale(i)
 	:setColor(math.lerp(clrTo,clrFrom,i/20))
 	:setPrimaryRenderType("CUTOUT_EMISSIVE_SOLID")
@@ -81,7 +81,8 @@ for i = 1, LAYERS, 1 do
 	
 end
 
-
+local wasInWater = false
+local ambient
 events.WORLD_RENDER:register(function (delta)
 	local pos = client:getCameraPos()
 	local height = pos.y-SEA_LEVEL
@@ -90,7 +91,20 @@ events.WORLD_RENDER:register(function (delta)
 	if height > 0 then
 		OVERLAY:setVisible(false)
 		OCEAN:setVisible(true)
+		if wasInWater then
+			wasInWater = false
+			sounds:playSound("minecraft:ambient.underwater.exit",pos)
+			if ambient then
+				ambient:stop()
+				ambient = nil
+			end
+		end
 	else
+		if not wasInWater then
+			wasInWater = true
+			ambient = sounds:playSound("minecraft:ambient.underwater.loop",pos)
+			sounds:playSound("minecraft:ambient.underwater.enter",pos)
+		end
 		textures["env.dome"]:applyFunc(0,0,1,64,function (col, x, y)
 			local v = (-height*0.1-0.5+y/64)
 			if v > 0 then
