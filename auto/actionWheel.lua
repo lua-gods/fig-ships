@@ -43,20 +43,20 @@ local function newAction(color,title,description)
 	return action
 end
 
-newAction("#9097D4","Build a Ship","Create a warship")
+newAction("#9097D4",":mci_mace: Build a Ship :mci_mace:","Create a warship")
 :item("minecraft:mace")
 
-newAction("#FCDC45","Spawn a Ship","Create a warship")
+newAction("#FCDC45",":mci_blaze_powder: Spawn a Ship :mci_blaze_powder:","Create a warship")
 :item("minecraft:blaze_powder")
 
 
 
-newAction("#ffffff","BATTLESHIP",
+newAction("#ffffff",":mci_iron_sword: BATTLESHIP :mci_iron_sword:",
 {
 	text = "",
 	extra = {
 		{
-			text = "Noah get the boat, we got a city to burn \n\n",
+			text = '"Noah get the boat, we got a city to burn"\n\n',
 		},
 		{
 			text = ":new_leaf: Created By: ",
@@ -96,16 +96,18 @@ end
 
 local lid = nil
 events.WORLD_RENDER:register(function (delta)
-	local id = action_wheel:getSelected()
-	if lid ~= id then
-		lid = id
-		if currentPlaying then
-			currentPlaying:stop()
-			currentPlaying = nil
-		end
-		local soundid = SOUNDS[id]
-		if soundid then
-			playSound(table.unpack(soundid))
+	if action_wheel:isEnabled() then -- for some reason this plays without this check
+		local id = action_wheel:getSelected() -- this method is buggy
+		if lid ~= id then
+			lid = id
+			if currentPlaying then
+				currentPlaying:stop()
+				currentPlaying = nil
+			end
+			local soundid = SOUNDS[id]
+			if soundid then
+				playSound(table.unpack(soundid))
+			end
 		end
 	end
 end)
