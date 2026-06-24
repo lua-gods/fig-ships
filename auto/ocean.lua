@@ -1,3 +1,5 @@
+if not host:isHost() then return end
+
 local world = models:newPart("world","WORLD")
 world:scale(16,16,16)
 
@@ -14,11 +16,11 @@ local OCEAN = world:newPart("ocean")
 local LAYERS = 20
 local LAYER_SCALE = 1
 local SEA_SIZE = 128
-local SEA_LEVEL = 103.5
+local SEA_LEVEL = 103.9
 
 
-local clrFrom = vectors.hexToRGB("#56c5c8")
-local clrTo = vectors.hexToRGB("#061D36")
+local clrFrom = vectors.hexToRGB("#4FF1D6")
+local clrTo = vectors.hexToRGB("rgb(0 22 11)")
 
 local WHITE = textures
 :newTexture("1x1white",1,1):setPixel(0,0,vec(1,1,1))
@@ -66,7 +68,7 @@ for i = 1, LAYERS, 1 do
 	else
 		model
 		:setColor(clrTo)
-		:setOpacity(3*R)
+		:setOpacity(4*R)
 	end
 	
 	OCEAN:addChild(model)
@@ -102,13 +104,13 @@ events.WORLD_RENDER:register(function (delta)
 	else
 		if not wasInWater then
 			wasInWater = true
-			ambient = sounds:playSound("minecraft:ambient.underwater.loop",pos)
+			ambient = sounds:playSound("minecraft:ambient.underwater.loop",pos):loop(true)
 			sounds:playSound("minecraft:ambient.underwater.enter",pos)
 		end
 		textures["env.dome"]:applyFunc(0,0,1,64,function (col, x, y)
-			local v = (-height*0.1-0.5+y/64)
+			local v = (-height*0.5-0.5+y/64)
 			if v > 0 then
-				return math.lerp(clrFrom,clrTo,math.min(v*0.25,1)):augmented(1)
+				return math.lerp(clrFrom,clrTo,math.min((v*0.05)^0.8,1)):augmented(1)
 			else
 				return vec(1,1,1,0)
 			end
@@ -118,6 +120,7 @@ events.WORLD_RENDER:register(function (delta)
 		OCEAN:setVisible(false)
 	end
 	OVERLAY:pos(pos*16)
+	
 end)
 
 local zoom = 0.5
