@@ -1,26 +1,21 @@
 if not host:isHost() then return end
 
-local world = models:newPart("world","WORLD")
-world:scale(16,16,16)
 
-local Circle = models.env.Ocean
-:setVisible(false)
-
-local Dome = models.env.Dome
-:setVisible(false)
-
-
-local OCEAN = world:newPart("ocean")
-:light(0,15)
 
 local LAYERS = 20
 local LAYER_SCALE = 1
 local SEA_SIZE = 128
-local SEA_LEVEL = 103.9
+SEA_LEVEL = 103.9
 
 
-local clrFrom = vectors.hexToRGB("#4FF1D6")
-local clrTo = vectors.hexToRGB("rgb(0 22 11)")
+local world = models:newPart("world","WORLD"):scale(16,16,16)
+local Circle = models.env.Ocean:setVisible(false)
+local Dome = models.env.Dome:setVisible(false)
+local OCEAN = world:newPart("ocean"):light(0,15)
+
+
+local COLOR_FROM = vectors.hexToRGB("#4FE6F1")
+local COLOR_TO = vectors.hexToRGB("#000066")
 
 local WHITE = textures
 :newTexture("1x1white",1,1):setPixel(0,0,vec(1,1,1))
@@ -38,12 +33,12 @@ local OVERLAY = models:newPart("overlay","WORLD")
 local SCREEN = OVERLAY:newPart("camera","NONE")
 
 
-for i = 1, 20, 1 do
+for i = 1, LAYERS, 1 do
 	Dome:copy("dome")
 	:moveTo(SCREEN)
-	:setOpacity(0.15)
+	:setOpacity(0.15+i*0.01)
 	:scale(i)
-	:setColor(math.lerp(clrTo,clrFrom,i/20))
+	:setColor(math.lerp(COLOR_FROM,COLOR_TO,0.5)*(i/20))
 	:setPrimaryRenderType("CUTOUT_EMISSIVE_SOLID")
 	:setVisible(true)
 end
@@ -58,16 +53,16 @@ for i = 1, LAYERS, 1 do
 	:pos(0,(-i+1)*LAYER_SCALE+SEA_LEVEL,0)
 	:setUV(5,5)
 	:setVisible(true)
-	:light(0,15)
+	:light(5,0)
 	:scale(SEA_SIZE)
 	
 	if i == 1 then
 		model
-		:setColor(clrFrom)
+		:setColor(COLOR_FROM)
 		:setOpacity(6*R)
 	else
 		model
-		:setColor(clrTo)
+		:setColor(COLOR_TO)
 		:setOpacity(4*R)
 	end
 	
@@ -110,7 +105,7 @@ events.WORLD_RENDER:register(function (delta)
 		textures["env.dome"]:applyFunc(0,0,1,64,function (col, x, y)
 			local v = (-height*0.5-0.5+y/64)
 			if v > 0 then
-				return math.lerp(clrFrom,clrTo,math.min((v*0.05)^0.8,1)):augmented(1)
+				return math.lerp(COLOR_FROM,COLOR_TO,math.min((v*0.05)^0.8,1)):augmented(1)
 			else
 				return vec(1,1,1,0)
 			end
@@ -121,6 +116,12 @@ events.WORLD_RENDER:register(function (delta)
 	end
 	OVERLAY:pos(pos*16)
 	
+end)
+
+events.ON_PLAY_SOUND:register(function (id, pos, volume, pitch, loop, category, path)
+	if path and pos.y < SEA_LEVEL then
+		sounds:playSound("minecraft:entity.player.swim",pos,1,math.lerp(0.9,1.1,math.random()))
+	end
 end)
 
 local zoom = 0.5
