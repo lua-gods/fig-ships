@@ -2,6 +2,10 @@
 local Macros = require("lib.GNMacros")
 require("auto.ocean") -- make sure sea level is declared
 
+local Tween = require("lib.GNtween")
+
+local Ship = require("lib.Ship")
+
 local ICON = models.misc.SKULL
 ICON:setRot(30, -45)
 	 :setPrimaryRenderType("CUTOUT_EMISSIVE_SOLID")
@@ -10,6 +14,8 @@ ICON:setRot(30, -45)
 
 -- height from the ground/sea
 local MARGIN = 5
+
+local SHIP_SAVE_PATH = "warship.gnws"
 
 -- CAMERA CONTROLS
 local SENSITIVITY = 0.15
@@ -28,6 +34,8 @@ local KEYBINDS = {
 	select = keybinds:fromVanilla("key.attack"),
 	delete = keybinds:newKeybind("delete", "key.keyboard.x"),
 	rotate = keybinds:newKeybind("rotate", "key.keyboard.r"),
+	esc = keybinds:newKeybind("rotate", "key.keyboard.escape"),
+	vineboom = keybinds:newKeybind("rotate", "key.keyboard.b"),
 }
 
 for key, value in pairs(KEYBINDS) do
@@ -36,99 +44,30 @@ end
 
 --────  END OF CONFIG  ────────────────────────────────────────────────────────--
 
----@type table<string,Ship.Part.Identity>
-local PARTS = {
-	["Front Hull"] = {},
-	["Hull"] = {},
-	["Back Hull"] = {},
 
-	["Control Room"] = {},
-
-	["Accommodation Floor 2"] = {},
-	["Accommodation Floor 1"] = {},
-
-	["Funnel"] = {},
-	["Core Hull"] = {},
-
-	["Cannon"] = {},
-	["Schwerer Gustav"] = {},
+local face2dir = {
+	["north"] = vectors.vec3(0, 0, -1),
+	["east"]  = vectors.vec3(1, 0, 0),
+	["south"] = vectors.vec3(0, 0, 1),
+	["west"]  = vectors.vec3(-1, 0, 0),
+	["up"]    = vectors.vec3(0, 1, 0),
+	["down"]  = vectors.vec3(0, -1, 0),
 }
 
 
 
----@class Ship.Part.Identity
----@field id string
----@field model ModelPart
----@field skullIcon ModelPart
----@field bounds {min:Vector3, max:Vector3}?
----@field studs {pos:Vector3, rot:Vector3}[]
----@field desc string?
----@field process fun()?
-
-
----@class Ship.Part
----@field id integer
----@field identity Ship.Part.Identity
----@field pos Vector3
----@field rot Vector3
----@field model ModelPart
----@field paint Minecraft.blockID
-
-
-local yourMom = math.huge
 
 --──── SHIP PARTS PARSING ────────────────────────────────────────────--
 
 local SKULL_ROOT = models:newPart("SkullRoot", "SKULL")
---local a = ""
-for index, model in ipairs(models.ship.Parts:getChildren()) do
-	local id = model:getName()
-	local offset = model:getPivot()
-
-	local bounds
-	if model.Selection then
-		local sel = model.Selection
-		local min = vec(yourMom, yourMom, yourMom)
-		local max = vec(-yourMom, -yourMom, -yourMom)
-		for index, value in ipairs(sel:getVertices("textures.manditory")) do
-			local pos = value:getPos()
-			min.x = math.min(min.x, pos.x)
-			min.y = math.min(min.y, pos.y)
-			min.z = math.min(min.z, pos.z)
-			max.x = math.max(max.x, pos.x)
-			max.y = math.max(max.y, pos.y)
-			max.z = math.max(max.z, pos.z)
-		end
-		min = min - offset
-		max = max - offset
-		bounds = { min = min, max = max }
-		sel:remove()
-	end
-
-	local skullIcon = model
-		 :copy("Skull" .. model:getName())
-		 :moveTo(SKULL_ROOT)
-		 :setPos(-offset)
-		 :setParentType("SKULL")
-		 :setVisible(false)
-
-	local parts = PARTS[id] or {}
-
-
-	--a = a .. '["'..id..'"]\n'
-
-	PARTS[id] = parts
-	parts.id = id
-	parts.model = models:newPart(id)
-		 :remove()
-		 :addChild(
-			 model:setPos(-offset)
-			 :remove()
-		 )
-	parts.skullIcon = skullIcon
-	parts.studs = {}
-	parts.bounds = bounds
+local icons = {}
+for index, identity in ipairs(Ship.getShipPartIdentities()) do
+	icons[identity.name] = identity.model
+	:copy("icon"..identity.name)
+	:moveTo(SKULL_ROOT)
+	:setVisible(false)
 end
+
 --──── Utility Functions ────────────────────────────────────────────--
 
 ---@param id Minecraft.soundID
@@ -299,20 +238,34 @@ end
 --──── Main Macro ────────────────────────────────────────────--
 
 return Macros.new(function(events, ...)
+	local myShip = Ship.new()
+	
 	local mode = 0
 	local paint
 	local shipPos = client:getCameraPos()
+	shipPos.y = math.max(SEA_LEVEL, world.getHeight(shipPos.x, shipPos.z, "WORLD_SURFACE")) + MARGIN
+	
 	local camPos = shipPos
 	local targetCamPos = shipPos
 	local zoom = 5
 	local targetZoom = 3
 
+	myShip.model:pos(shipPos * 16)
+
+
+	local preview
+	
 	local buildPage = action_wheel:newPage("Builder")
 	local paintPage = action_wheel:newPage("Paint")
 
+	local function clearPreview()
+		if preview then
+			preview:remove()
+		end
+	end
+	
 	action_wheel:setPage()
 	events.ENTITY_INIT:register(function()
-		local u1, u2, u3, u4 = client.uuidToIntArray(player:getUUID())
 
 		--──── PAINT PAGE ────────────────────────────────────────────--
 
@@ -373,7 +326,7 @@ return Macros.new(function(events, ...)
 
 
 		--──── BUILD PAGE ────────────────────────────────────────────--
-
+		
 		---@type Action[]
 		local actions = {}
 
@@ -387,10 +340,27 @@ return Macros.new(function(events, ...)
 		buildPage:newAction()
 			 :setItem(namedHead("tex;textures.load"))
 			 :setTitle(fancyTitle("Load Ship", "Load saved Ship"))
+			 :onLeftClick(function (self)
+				local buffer = data:createBuffer()
+				buffer:readFromStream(file:openReadStream(SHIP_SAVE_PATH))
+				buffer:setPosition(0)
+				local shipData = buffer:readByteArray(buffer:available())
+				myShip:unpackData(shipData)
+				playSound("minecraft:block.trial_spawner.eject_item")
+			end)
+			 
 
 		buildPage:newAction()
 			 :setItem(namedHead("tex;textures.save"))
 			 :setTitle(fancyTitle("Save Ship", "Save the ship"))
+			 :onLeftClick(function (self)
+				local shipData = myShip:packData()
+				local buffer = data:createBuffer(#shipData)
+				buffer:writeByteArray(shipData)
+				buffer:setPosition(0)
+				buffer:writeToStream(file:openWriteStream(SHIP_SAVE_PATH))
+				playSound("minecraft:block.trial_spawner.open_shutter")
+			 end)
 
 		actions[-1] = buildPage:newAction()
 			 :setItem(namedHead("tex;textures.paint"))
@@ -402,6 +372,7 @@ return Macros.new(function(events, ...)
 				 updateHighlight()
 				 updatePaintPage()
 				 search(true)
+				 clearPreview()
 			 end)
 
 		actions[0] = buildPage:newAction()
@@ -410,22 +381,29 @@ return Macros.new(function(events, ...)
 			 :onLeftClick(function(self)
 				 mode = 0
 				 updateHighlight()
+				 clearPreview()
 			 end)
 
-		for key, value in pairs(PARTS) do
-			buildPage:newAction()
-				 :setItem(namedHead(key))
-				 :setTitle(fancyTitle(key, value.desc or "..."))
+		for i,part in pairs(Ship.getShipPartIdentities()) do
+			if not part.locked then
+				local action = buildPage:newAction()
+					 :setItem(namedHead(part.name))
+					 :setTitle(fancyTitle(part.name, part.desc or "..."))
+					 :onLeftClick(function(self)
+						 mode = i
+						 if preview then
+							preview:remove()
+						 end
+						 preview = part.model:copy("preview"):setParentType("WORLD"):moveTo(models):setOpacity(0.2)
+						 updateHighlight()
+						end)
+				actions[i] = action
+			end
 		end
-
-
 
 		-- generate new probability
 		action_wheel:setPage(buildPage)
 	end)
-
-
-	shipPos.y = math.max(SEA_LEVEL, world.getHeight(shipPos.x, shipPos.z, "WORLD_SURFACE")) + MARGIN
 
 	renderer:setCameraPivot(shipPos)
 	renderer:renderRightArm(false)
@@ -433,75 +411,28 @@ return Macros.new(function(events, ...)
 	renderer:setRenderCrosshair(false)
 	host:setUnlockCursor(true)
 
-	local shipModel = models:newPart("warship", "WORLD")
-	shipModel:pos(shipPos * 16)
-	---@type Ship.Part[]
-	local ship = {}
 
-	local hitbox = {}
-	local function recalculateHitbox()
-		local i = 0
-		for id, part in pairs(ship) do
-			i = i + 1
-			part.id = i
-		end
-		for id, value in pairs(ship) do
-			local mat = matrices.mat4()
-			mat:rotate(value.rot)
-			mat:translate(value.pos)
+	---@param model ModelPart
+	---@param r Vector3|number?
+	---@param g number?
+	---@param b number?
+	local function HighlightPart(model, r, g, b)
 
-			local bounds = value.identity.bounds
-
-			hitbox[id] = {
-				mat:apply(bounds.min) / 16,
-				mat:apply(bounds.max) / 16,
-			}
-		end
-	end
-
-	local nextFree = 0
-	local function newShipPart(id, pos, rot)
-		local part = PARTS[id]
-		if part then
-			nextFree = nextFree + 1
-			local model = part.model:copy("shipPart" .. nextFree)
-			---@type Ship.Part
-			local self = {
-				model = model,
-				pos = pos,
-				rot = rot,
-				identity = part,
-				id = nextFree,
-			}
-			model
-				 :pos(pos)
-				 :rot(rot)
-				 :setPrimaryRenderType("CUTOUT")
-			shipModel:addChild(model)
-			ship[nextFree] = self
-		end
-	end
-
-	local function HighlightPart(part, r, g, b)
-		if not part then return end
-		local m = part.model
-		if m then
+		if model then
 			if r then
-				m:setSecondaryRenderType("EYES")
-				m:setSecondaryTexture("CUSTOM", textures["textures.manditory"])
-				m:setSecondaryColor(r, g, b)
+				model:setPrimaryRenderType("CUTOUT")
+				model:setSecondaryRenderType("EYES")
+				model:setSecondaryTexture("CUSTOM", textures["textures.manditory"])
+				---@diagnostic disable-next-line: param-type-mismatch
+				model:setSecondaryColor(r, g, b)
 			else
-				m:setSecondaryTexture("SECONDARY")
+				model:setPrimaryRenderType("TRANSLUCENT")
+				model:setSecondaryTexture("SECONDARY")
 			end
 		end
 	end
 
-	local o = 0
-	for id, value in pairs(PARTS) do
-		o = o + 16
-		newShipPart(id, vec(o, 0, 0), vec(0, 0, 0))
-	end
-	recalculateHitbox()
+	myShip:newPart(1)
 
 	local rot = vec(25, -45)
 
@@ -518,11 +449,32 @@ return Macros.new(function(events, ...)
 		renderer:setCameraPos(0, 0, zoom)
 
 		renderer:setCameraRot(rot.xy_)
+		
+		host:setActionbar(#myShip:packData().." bytes")
 	end)
+	
+	
 
 	local lHoveredPart ---@type Ship.Part?
 	local hoveredPart ---@type Ship.Part?
 	local selectedPart ---@type Ship.Part?
+	local placementPos
+	local placementDir
+	
+	
+	local function setSelectedPart(part)
+		if selectedPart then
+			HighlightPart(selectedPart.model)
+		end
+		if selectedPart ~= part then
+			selectedPart = part
+			if selectedPart then
+				HighlightPart(selectedPart.model,SELECTED_COLOR)
+				targetCamPos = selectedPart.pos / 16 + shipPos
+			end
+		end
+	end
+	
 	events.MOUSE_MOVE:register(function(x, y)
 		if KEYBINDS.pan:isPressed() then
 			rot.x = rot.x + y * SENSITIVITY
@@ -533,72 +485,128 @@ return Macros.new(function(events, ...)
 		local mpos = client:getMousePos()
 		local pos = screenToWorldSpace(0.1, mpos, getRealFov())
 		local to = screenToWorldSpace(20, mpos, getRealFov())
-		local aabb, hitPos, side, index = raycast:aabb(pos - shipPos, to - shipPos, hitbox)
-
-		hoveredPart = side and ship[index]
+		local aabb, hitPos, side, index = raycast:aabb(pos - shipPos, to - shipPos, myShip.hitbox)
+		if hitPos and index and hitPos and side then
+			placementPos = hitPos + face2dir[side] * 0.5
+			placementDir = face2dir[side]
+			placementPos.x = math.floor(placementPos.x+0.5)
+			if side == "up" then
+				placementPos.y = aabb[2].y
+			else
+				placementPos.y = aabb[1].y
+			end
+			placementPos.z = math.floor(placementPos.z+0.5)
+			
+			placementPos.x = math.clamp(placementPos.x,-128,128)
+			placementPos.y = math.clamp(placementPos.y,0,256)
+			placementPos.z = math.clamp(placementPos.z,-128,128)
+		else
+			placementPos = nil
+		end
+		
+		if preview then
+			if placementPos then
+				if myShip:isOccupied(placementPos*16) then
+					preview:setColor(1,0,0)
+				else
+					preview:setColor(1,1,1)
+				end
+				preview:setPos((placementPos + shipPos) * 16)
+			else
+				preview:setPos(0,-6942067,0)
+			end
+		end
+		
+		if mode <= 0 then
+			hoveredPart = side and myShip.parts[index]
+		else
+			hoveredPart = nil
+		end
 		if hoveredPart ~= lHoveredPart then
 			if lHoveredPart then
-				HighlightPart(lHoveredPart)
+				HighlightPart(lHoveredPart.model)
 			end
 
 			if selectedPart then
-				HighlightPart(selectedPart, SELECTED_COLOR)
+				HighlightPart(selectedPart.model, SELECTED_COLOR)
 			end
 
 			if hoveredPart then
-				HighlightPart(hoveredPart, HOVER_COLOR)
+				HighlightPart(hoveredPart.model, HOVER_COLOR)
 			end
 			lHoveredPart = hoveredPart
 		end
 	end)
-
+	
+	
 	KEYBINDS.select:onPress(function(modifiers, self)
 		if notObscured() then
 			if mode == 0 then -- SELECT MODE
 				if hoveredPart then
-					HighlightPart(selectedPart)
-					selectedPart = hoveredPart
-					HighlightPart(hoveredPart, PRESSED_COLOR)
+					setSelectedPart(hoveredPart)
 					playSound("minecraft:entity.item_frame.add_item", 0.9)
-					targetCamPos = hoveredPart.pos / 16 + shipPos
+					HighlightPart(hoveredPart.model, PRESSED_COLOR)
 				end
 			elseif mode == -1 then -- PAINT MODE
-				if hoveredPart then
+			if hoveredPart then
 					if paint then
-						hoveredPart.paint = paint
-						local tex = world.newBlock(paint):getTextures()
-						local path = tex[next(tex)]
-						if path then
-							path = path[1]
-							playSound("minecraft:block.honey_block.place", 0.75)
-							hoveredPart.model:setPrimaryTexture("RESOURCE", path .. ".png")
-							targetCamPos = hoveredPart.pos / 16 + shipPos
-						end
+						myShip:paintPart(hoveredPart.id, paint)
+						playSound("minecraft:block.honey_block.place")
 					end
+				end
+			else -- BUILD MODE
+				if placementPos and not myShip:isOccupied(placementPos*16) then
+					--playSound("minecraft:block.iron_trapdoor.close", 0.5)
+					playSound("minecraft:block.iron_door.close", 0.5)
+					local part = myShip:newPart(mode, placementPos*16, 0)
+					Tween.new{
+						from = part.pos + placementDir*16,
+						to = part.pos,
+						easing="inQuad",
+						duration=0.25,
+						tick=function (v, t)
+							part.model:setPos(v)
+						end
+					}
+					setSelectedPart(part)
 				end
 			end
 		end
 	end):onRelease(function(modifiers, self)
 		if hoveredPart and notObscured() then
 			if hoveredPart == selectedPart then
-				HighlightPart(hoveredPart, SELECTED_COLOR)
+				HighlightPart(hoveredPart.model, SELECTED_COLOR)
 			else
-				HighlightPart(hoveredPart, HOVER_COLOR)
+				HighlightPart(hoveredPart.model, HOVER_COLOR)
 			end
 		end
 	end)
 
 	KEYBINDS.delete:onPress(function(modifiers, self)
-		if selectedPart and mode == 0 then -- DELETE ONLY IN SELECT MODE
-			selectedPart.model:remove()
-			playSound("minecraft:block.iron_trapdoor.open", 0.5)
-			playSound("minecraft:block.iron_trapdoor.close", 0.5)
-			playSound("minecraft:entity.generic.eat")
-			table.remove(ship, selectedPart.id)
-			recalculateHitbox()
-			selectedPart = nil
+		if selectedPart then -- DELETE ONLY IN SELECT MODE
+			if not selectedPart.identity.locked then
+				playSound("minecraft:block.iron_trapdoor.open", 0.5)
+				playSound("minecraft:block.iron_trapdoor.close", 0.5)
+				playSound("minecraft:entity.generic.eat")
+				myShip:removePart(selectedPart.id)
+			else
+				playSound("minecraft:entity.breeze.deflect")
+			end
 		end
-		recalculateHitbox()
+	end)
+	
+	KEYBINDS.esc:onPress(function (modifiers, self)
+		if mode ~= 0 then
+			mode = 0
+			playSound("minecraft:entity.breeze.deflect")
+			clearPreview()
+			return true
+		end
+	end)
+	
+	KEYBINDS.vineboom:onPress(function (modifiers, self)
+		local data = myShip:packData()
+		myShip:unpackData(data)
 	end)
 
 	events.MOUSE_SCROLL:register(function(dir)
@@ -632,13 +640,13 @@ return Macros.new(function(events, ...)
 					 :setVisible(true)
 				lastVisible = ICON
 			else
-				local part = PARTS[name]
-				if part then
+				local partIcon = icons[name]
+				if partIcon then
 					ICON:setVisible(false)
-					part.skullIcon
+					partIcon
 						 :setVisible(true)
 						 :setRot(vec(0, -45 + rot.y, 0))
-					lastVisible = part.skullIcon
+					lastVisible = partIcon
 				end
 			end
 		end
