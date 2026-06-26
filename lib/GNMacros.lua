@@ -50,15 +50,11 @@ function Macro:setActive(active, ...)
 				ON_ENTITY_LOAD = Event.new(),
 			}, MacroEventsAPI)
 			local out = self.init(self.events, ...)
-
+			
+			--TODO: ENTITY INIT SHOULD BE IN METATABLE INDEX INSTEAD OF MACRO INIT
 			local hasInit = false
 			local hasLoadEvent = false
 			for name, value in pairs(self.events) do
-				if events[name] then
-					events[name]:register(function(...)
-						value:invoke(...)
-					end, self.id)
-				end
 				if name == "ENTITY_INIT" then
 					hasInit = true
 				end
@@ -96,7 +92,7 @@ function Macro:setActive(active, ...)
 			return out
 		else
 			for name in pairs(self.events) do
-				if events[name] then
+				if events[name]then
 					events[name]:remove(self.id)
 				end
 				if self.initName then
@@ -121,13 +117,19 @@ function MacrosAPI.new(init)
 	return setmetatable(new, Macro)
 end
 
-MacroEventsAPI.__index = function(t, k)
-	if not rawget(t, k) then
+MacroEventsAPI.__index = function(t, name)
+	if not rawget(t, name) then
 		local signal = Event.new()
-		rawset(t, k, signal)
+		rawset(t, name, signal)
+		if name ~= "ENTITY_INIT" then
+			events[name]:register(function(...)
+				local out = signal:invoke(...)[1] or {}
+				return table.unpack(out)
+			end, rawget(t,"id"))
+		end
 		--if v and type(v) == "function" then signal:register(v) end
 	end
-	return rawget(t, k)
+	return rawget(t, name)
 end
 
 

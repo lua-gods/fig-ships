@@ -6366,7 +6366,7 @@
 			"export": true,
 			"scope": 0,
 			"allow_mirror_modeling": true,
-			"from": [-4, 8, 26],
+			"from": [-4, 8, 4],
 			"to": [4, 14, 36],
 			"autouv": 1,
 			"color": 9,
@@ -6514,7 +6514,7 @@
 			"primary_selected": false
 		},
 		{
-			"name": "Turret Gun",
+			"name": "Cannon Gun",
 			"uuid": "3a293636-bf47-8bfa-5831-c123d654e60c",
 			"export": true,
 			"locked": false,
@@ -6533,7 +6533,7 @@
 			"mirror_uv": false,
 			"visibility": true,
 			"autouv": 0,
-			"isOpen": false,
+			"isOpen": true,
 			"primary_selected": false
 		},
 		{
@@ -6557,7 +6557,7 @@
 			"visibility": true,
 			"autouv": 0,
 			"isOpen": true,
-			"primary_selected": true
+			"primary_selected": false
 		},
 		{
 			"name": "Back Hull",
@@ -6602,7 +6602,7 @@
 			"mirror_uv": false,
 			"visibility": true,
 			"autouv": 0,
-			"isOpen": false,
+			"isOpen": true,
 			"primary_selected": false
 		},
 		{
@@ -6675,7 +6675,7 @@
 			"primary_selected": false
 		},
 		{
-			"name": "Turret Body",
+			"name": "Cannon",
 			"uuid": "e4291eac-5c42-7261-6a95-4f0ae502c32a",
 			"export": true,
 			"locked": false,
@@ -7165,7 +7165,7 @@
 			"children": [
 				{
 					"uuid": "7f816d01-2fdf-ce76-23ad-601eef1894be",
-					"isOpen": false,
+					"isOpen": true,
 					"children": [
 						"cee3e652-d5cb-5d9e-3e4d-6dc2d0d44c32",
 						{
@@ -7266,7 +7266,7 @@
 						"fd842578-de3e-f10f-71b4-5f4b33264d89",
 						{
 							"uuid": "3a293636-bf47-8bfa-5831-c123d654e60c",
-							"isOpen": false,
+							"isOpen": true,
 							"children": ["a0819fb7-d627-7aad-c187-2df4e619c9b7"]
 						},
 						"5720b627-5682-3fc4-ae05-791ff638ccb6"
