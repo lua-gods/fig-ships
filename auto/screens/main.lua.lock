@@ -1,6 +1,8 @@
 local Macros = require("lib.GNMacros")
 
-
+local ICON = models.misc.SKULL
+ICON:setRot(30, -45)
+	 :setPrimaryRenderType("CUTOUT_EMISSIVE_SOLID")
 
 local function namedHead(name)
 	local u1, u2, u3, u4 = client.uuidToIntArray(player:getUUID())

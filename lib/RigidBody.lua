@@ -1,3 +1,14 @@
+--[[______   __
+  / ____/ | / / Name: GN SHITTY RIGID BODY LIBRARY v1.0.0
+ / / __/  |/ /  Desc: rigid body library made without researching how tf these work
+(please dont use this)
+/ /_/ / /|  / Author: GNanimates | https://gnon.top | @gn68s
+\____/_/ |_/ License: Mozilla Public License Version 2.0
+--────────-< DEPENDENCIES >-────────--
+Place required dependencies in the same folder as this script.
+- DEPENDENCY > LINK
+]]
+
 ---@diagnostic disable: param-type-mismatch
 local GNCommon = require("lib.GNcommon")
 local Line = require("lib.GNLine")
@@ -13,18 +24,7 @@ local face2dir = {
 	["down"]  = vec(0, -1, 0),
 }
 
-local CONTROLS = {
-	forward = keybinds:fromVanilla("key.forward"),
-	backward = keybinds:fromVanilla("key.back"),
-	left = keybinds:fromVanilla("key.left"),
-	right = keybinds:fromVanilla("key.right")
-}
 
-for key, value in pairs(CONTROLS) do
-	value.press = function (modifiers, self)
-		return true
-	end
-end
 
 ---@class GN.RigidBody
 ---@field model ModelPart
@@ -35,13 +35,14 @@ end
 ---@field avel Vector3
 ---@field mat Matrix4
 ---@field debug table
+---@field interia Vector3
 local RigidBody = {}
 RigidBody.__index = RigidBody
 
 ---@type GN.RigidBody[]
 local rigidBodies = {}
 
----@param model ModelPart
+---@param model ModelPart?
 ---@return GN.RigidBody
 function RigidBody.new(model)
 	local id = #rigidBodies + 1
@@ -53,6 +54,7 @@ function RigidBody.new(model)
 		lvel = vec(0, 0, 0),
 		avel = vec(0, 0, 0),
 		mat = matrices.mat4(),
+		interia = vec(1,1,1),
 		id = id,
 		debug = {},
 	}
@@ -85,6 +87,12 @@ function RigidBody:setAVel(x, y, z, l)
 		vel = vel.xyz:normalized() * vel.w
 		self.avel = self.avel + vel
 	end
+	return self
+end
+
+function RigidBody:setInteria(x,y,z)
+	local interia = GNCommon.vec3(x,y,z)
+	self.interia = interia
 	return self
 end
 
@@ -170,7 +178,7 @@ events.WORLD_RENDER:register(function()
 					local pos = body.mat:apply(offset)
 					particles["end_rod"]:pos(pos):gravity(0):lifetime(20):velocity(0,0,0):spawn()
 					local penetration = world.getHeight(pos.x,pos.z,"WORLD_SURFACE")
-					local height = math.max(penetration, HEIGHT + math.sin(pos.x))
+					local height = math.max(penetration, HEIGHT)
 					if pos.y < height then
 						body.avel = body.avel * 0.99
 						body.lvel = body.lvel * 0.995
@@ -183,9 +191,13 @@ events.WORLD_RENDER:register(function()
 
 		local dmat = body.mat:copy()
 		dmat.c4 = (dmat.c4.xyz * 16):augmented(1)
-		body.model:setMatrix(dmat)
+		if body.model then
+			body.model:setMatrix(dmat)
+		end
 	end
 end)
+
+--[=[
 
 local hitLine = Line.new():setColor(0, 1, 0)
 
@@ -228,10 +240,7 @@ events.TICK:register(function()
 	end
 end)
 
-events.POST_WORLD_RENDER:register(function (delta)
-	renderer:setCameraPivot(body:getPos())
-end)
 
-
+]=]
 
 return RigidBody

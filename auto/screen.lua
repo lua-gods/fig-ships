@@ -1,4 +1,7 @@
 
+local Ship = require("lib.Ship")
+SHIP = Ship.new() -- active ship used for the host
+
 ---@type table<string,GN.Macro>
 local SCREENS = {}
 
@@ -10,14 +13,16 @@ end
 
 local currentScreen
 function setScreen(name)
-	if currentScreen then
-		currentScreen:setActive(false)
-	end
 	local screen = SCREENS[name]
-	if screen then
-		screen:setActive(true)
+	if screen ~= currentScreen then
+		if currentScreen then
+			currentScreen:setActive(false)
+		end
+		if screen then
+			screen:setActive(true)
+		end
+		currentScreen = screen
 	end
-	currentScreen = screen
 end
 
 setScreen("builder")

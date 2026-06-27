@@ -316,6 +316,38 @@
 			"saved": true,
 			"uuid": "e12f704a-f093-764c-fc00-06dd3ad11b16",
 			"source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA30lEQVR4AcyPzwoBURTGr9laWbCylyyVspDH8ASeyF6WPIaF9RSJUZKIIk3JbFiM+Z1yu2OYP9mY5rude875fvccS/34/SmgU6741XzBT7NdZAXMvVIxjVd6QgDM/WZDra43KTIFuW+iSQNoGu6WyltvyKtxpSZiGgTY1NQ9SZ8AMFM811v6daYwZdszZUrcwWFh5gWKGIJcpt8a7Z1c25lnMpnNssLCc3Pd41ZN7g9dI47Tq1EAXIAMLgcNIY4THqQBXN4h3OOEJwQggYGXidMoAsAEBBEn6SMgyWTWnwAAAP//KaANngAAAAZJREFUAwBg6rEhmIZGvAAAAABJRU5ErkJggg=="
+		},
+		{
+			"name": "deploy.png",
+			"relative_path": "textures/deploy.png",
+			"folder": "",
+			"namespace": "",
+			"id": "7",
+			"group": "",
+			"scope": 0,
+			"width": 16,
+			"height": 16,
+			"uv_width": 16,
+			"uv_height": 16,
+			"particle": false,
+			"use_as_default": false,
+			"layers_enabled": false,
+			"sync_to_project": "",
+			"file_format": "png",
+			"render_mode": "default",
+			"render_sides": "auto",
+			"wrap_mode": "limited",
+			"pbr_channel": "color",
+			"fps": 7,
+			"frame_time": 1,
+			"frame_order_type": "loop",
+			"frame_order": "",
+			"frame_interpolate": false,
+			"visible": true,
+			"internal": true,
+			"saved": true,
+			"uuid": "b6e193d3-ddbe-e39b-bcb1-f28aa19a5c15",
+			"source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABZElEQVR4AZRTu0oDURQcFxWVYGObYGdEEY1dtLfUykchFpZC/sNCENRKFOxUrPIN4gPFEBGDiNEinXayPoiS9c4kG+4udwsDs7lnzszsuQfWg+O3mM4GLjikcAZQeFR7QKGnV5j0Okk5kRjwubDiNMTJxIC4MKlODPioviR5Inw7wF5aRGEVLk07gDp7cY/vPilhurtLy+RS4wtVwMj4bHA3kMVSZhi53JhMrsdZ/Qelxi+opYcaBfBwXy6qsXpxhaH+FKkIbDO1YdMLk0Yn5sQxvfD6FgmxzRSFWnq9ytQyhL5BVAz2DzY1CUMots3sUSO0fLpCan0e2NmgHvndG3DE48wMtr+/dGeeybEnkdHKYwoP5VP4T3XguqYQNi7LzwjOt0AjwTM59vQio5XHeDWBzCaN//5hFflGmpVCaGZBjj1qcFsC9oqkWx8TCRum2bF2AhsyhBpZm4/mBGYUXuXfAPAHAAD//7EpQnwAAAAGSURBVAMAJS/NcUvJ3RYAAAAASUVORK5CYII="
 		}
 	]
 }

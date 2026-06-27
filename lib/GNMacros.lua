@@ -44,6 +44,7 @@ function Macro:setActive(active, ...)
 		self.isActive = active
 		if active then
 			self.events = setmetatable({
+				id = self.id,
 				ENTITY_INIT = Event.new(),
 				ON_EXIT = Event.new(),
 				ON_ENTITY_UNLOAD = Event.new(),
