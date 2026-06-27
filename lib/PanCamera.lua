@@ -5,7 +5,7 @@ local KEYBINDS = require("auto.keybinds")
 local SENSITIVITY = 0.15
 local ZOOM_SPEED = 1.2
 
-local DEFAULT_ZOOM = 5
+local DEFAULT_ZOOM = 16
 
 local CAMERA_EASING = 10
 local ZOOM_EASING = 20

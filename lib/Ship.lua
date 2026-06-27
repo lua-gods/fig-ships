@@ -1,5 +1,6 @@
 ---@diagnostic disable: missing-fields
 
+local SHIP_SCALE = 8
 local GNCommon = require("lib.GNcommon")
 
 local zLib = require("lib.zlib")
@@ -53,6 +54,7 @@ local ShipAPI = {}
 ---@field models ModelPart[]
 ---@field parts Ship.Part[]
 ---@field spatial table<string,Ship.Part>
+---@field scale number
 ---@field hitbox {min:Vector3, max:Vector3}[]
 local Ship = {}
 Ship.__index = Ship
@@ -138,6 +140,7 @@ function ShipAPI.new()
 		spatial = {},
 		model = models:newPart("Ship" .. client.intUUIDToString(client:generateUUID()), "WORLD"),
 		models = {},
+		scale = SHIP_SCALE,
 		hitbox = {},
 	}
 	setmetatable(self, Ship)
@@ -172,7 +175,8 @@ function Ship:newPart(id, pos, rot)
 			pos = pos:floor(),
 			rot = math.floor(rot),
 			model = identity.model:copy("Part" .. id):moveTo(self.model)
-				 :setPos(pos)
+				 :setPos(pos * SHIP_SCALE)
+				 :setScale(SHIP_SCALE)
 				 :setRot(0, rot * 90, 0),
 			paint = nil,
 		}
@@ -227,8 +231,9 @@ function Ship:recalculateHitbox()
 	self.hitbox = {}
 	for id, part in pairs(self.parts) do
 		local mat = matrices.mat4()
+		mat:scale(SHIP_SCALE)
 		mat:rotate(0, part.rot * 90, 0)
-		mat:translate(part.pos)
+		mat:translate(part.pos * SHIP_SCALE)
 
 		local bounds = part.identity.bounds
 

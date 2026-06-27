@@ -124,4 +124,33 @@ events.ON_PLAY_SOUND:register(function (id, pos, volume, pitch, loop, category, 
 	end
 end)
 
-local zoom = 0.5
+
+
+local instances = {}
+
+
+local function rand(a,b)
+	return math.lerp(a,b,math.random())
+end
+
+---@param id Minecraft.soundID
+---@param pitch number?
+---@param volume number?
+local function playSound(id, pitch, volume)
+	instances[#instances+1] = sounds[id]
+		 :pos(client:getCameraPos().x_z + vec(rand(-32,32),SEA_LEVEL,rand(-32,32)))
+		 :pitch(pitch or 1)
+		 :attenuation(5)
+		 :volume(volume or 1)
+		 :play()
+end
+
+local timer = 0
+
+events.WORLD_TICK:register(function ()
+	timer = timer -1
+	if timer < 0 then
+		timer = math.random(20,40)
+		playSound("Ocean "..math.random(1,3),rand(0.8,1.1),0.1)
+	end
+end)

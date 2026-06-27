@@ -1,11 +1,9 @@
 ---@diagnostic disable: missing-fields
 local Macros = require("lib.GNMacros")
-require("auto.ocean") -- make sure sea level is declared
-
 local Tween = require("lib.GNtween")
-
 local Ship = require("lib.Ship")
 local PanCamera = require("lib.PanCamera")
+require("auto.ocean") -- make sure sea level is declared
 
 --────  CONFIG  ────────────────────────────────────────────────────────--
 
@@ -41,7 +39,6 @@ local face2dir = {
 
 
 
-
 --──── SHIP PARTS PARSING ────────────────────────────────────────────--
 
 
@@ -58,6 +55,8 @@ local function playSound(id, pitch, volume)
 		 :volume(volume or 1)
 		 :play()
 end
+
+
 
 -- modified version of screen to world space made by Auria & GNamimates, used to get fov
 local function screenToWorldSpace(distance, pos, fov)
@@ -358,7 +357,7 @@ return Macros.new(function(events, ...)
 						 if preview then
 							 preview:remove()
 						 end
-						 preview = part.model:copy("preview"):setParentType("WORLD"):moveTo(models)
+						 preview = part.model:copy("preview"):scale(SHIP.scale):setParentType("WORLD"):moveTo(models)
 							  :setOpacity(0.2)
 						 updateHighlight()
 					 end)
@@ -415,16 +414,16 @@ return Macros.new(function(events, ...)
 		if not notObscured() then return end
 		local mpos = client:getMousePos()
 		local pos = screenToWorldSpace(0.1, mpos, getRealFov())
-		local to = screenToWorldSpace(20, mpos, getRealFov())
+		local to = screenToWorldSpace(50, mpos, getRealFov())
 		local aabb, hitPos, side, index = raycast:aabb(pos - shipPos, to - shipPos, SHIP.hitbox)
 		if hitPos and index and hitPos and side then
-			placementPos = hitPos + face2dir[side] * 0.5
+			placementPos = (hitPos / SHIP.scale) + face2dir[side] * 0.5
 			placementDir = face2dir[side]
 			placementPos.x = math.floor(placementPos.x + 0.5)
 			if side == "up" then
-				placementPos.y = aabb[2].y
+				placementPos.y = aabb[2].y / SHIP.scale
 			else
-				placementPos.y = aabb[1].y
+				placementPos.y = aabb[1].y / SHIP.scale
 			end
 			placementPos.z = math.floor(placementPos.z + 0.5)
 
@@ -442,7 +441,7 @@ return Macros.new(function(events, ...)
 				else
 					preview:setColor(1, 1, 1)
 				end
-				preview:setPos((placementPos + shipPos) * 16)
+				preview:setPos((placementPos * SHIP.scale + shipPos) * 16)
 			else
 				preview:setPos(0, -6942067, 0)
 			end
@@ -480,14 +479,14 @@ return Macros.new(function(events, ...)
 			selectedPart = part
 			if selectedPart then
 				HighlightPart(selectedPart.model, SELECTED_COLOR)
-				targetCamPos = selectedPart.pos / 16 + shipPos
+				PanCamera.setPos((selectedPart.pos * SHIP.scale) / 16 + shipPos)
 			else
 				playSound("minecraft:entity.item_frame.remove_item")
 				local center = vec(0, 0, 0)
 				for index, value in ipairs(SHIP.parts) do
-					center = center + value.pos
+					center = center + value.pos * SHIP.scale
 				end
-				targetCamPos = (center / #SHIP.parts) / 16 + shipPos
+				PanCamera.setPos((center / #SHIP.parts) / 16 + shipPos)
 			end
 		end
 	end
@@ -518,8 +517,8 @@ return Macros.new(function(events, ...)
 					playSound("minecraft:block.iron_door.close", 0.5)
 					local part = SHIP:newPart(mode, placementPos * 16, 0)
 					Tween.new {
-						from = part.pos + placementDir * 16,
-						to = part.pos,
+						from = (part.pos + placementDir * 16) * SHIP.scale,
+						to = (part.pos * SHIP.scale),
 						easing = "inQuad",
 						duration = 0.25,
 						tick = function(v, t)
@@ -582,6 +581,12 @@ return Macros.new(function(events, ...)
 		renderer:setCameraPivot()
 		renderer:setRenderCrosshair()
 		host:setUnlockCursor()
+		
+		KEYBINDS.select.press = nil
+		KEYBINDS.select.release = nil
+		KEYBINDS.vineboom.press = nil
+		KEYBINDS.delete.press = nil
+		KEYBINDS.esc.press = nil
 	end)
 
 

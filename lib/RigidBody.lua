@@ -14,6 +14,7 @@ local GNCommon = require("lib.GNcommon")
 local Line = require("lib.GNLine")
 
 local HEIGHT = 104
+local KEYBINDS = require("auto.keybinds")
 
 local face2dir = {
 	["north"] = vec(0, 0, -1),
@@ -35,7 +36,8 @@ local face2dir = {
 ---@field avel Vector3
 ---@field mat Matrix4
 ---@field debug table
----@field interia Vector3
+---@field size Vector3
+---@field points Vector3[]
 local RigidBody = {}
 RigidBody.__index = RigidBody
 
@@ -54,9 +56,10 @@ function RigidBody.new(model)
 		lvel = vec(0, 0, 0),
 		avel = vec(0, 0, 0),
 		mat = matrices.mat4(),
-		interia = vec(1,1,1),
+		size = vec(1, 1, 1),
 		id = id,
 		debug = {},
+		points = {},
 	}
 
 	self.debug.axis = Line.new():setColor(1, 0.5, 0)
@@ -90,9 +93,9 @@ function RigidBody:setAVel(x, y, z, l)
 	return self
 end
 
-function RigidBody:setInteria(x,y,z)
-	local interia = GNCommon.vec3(x,y,z)
-	self.interia = interia
+function RigidBody:setInteria(x, y, z)
+	local interia = GNCommon.vec3(x, y, z)
+	self.size = interia
 	return self
 end
 
@@ -102,19 +105,19 @@ local impulseLine = Line.new():setColor(0, 0, 1)
 function RigidBody:applyImpulse(x, y, z, fx, fy, fz)
 	local lmat = self.mat:inverted()
 	local pos = lmat:apply(GNCommon.vec3(x, y, z))
-	local impulse = lmat:applyDir(GNCommon.vec3(fx, fy, fz))  -- transform direction too
+	local impulse = lmat:applyDir(GNCommon.vec3(fx, fy, fz)):div(self.size) -- transform direction too
 	local dir = (pos):cross(impulse)
 	local p = self:getPos()
-	impulseLine:setAB(p, p+dir:normalized())
-	local absorbed = 1 - ((dir:copy():div(4,1,4)):length() / impulse:length())
+	impulseLine:setAB(p, p + dir:normalized())
+	local absorbed = 1 - ((dir / self.size):length() / impulse:length())
 	absorbed = math.clamp(absorbed, 0.1, 0.9)
-	self.lvel = self.lvel + self.mat:applyDir(impulse) * absorbed  -- back to world for lvel
-	self.avel = self.avel + self.mat:applyDir(dir)
+	self.lvel = self.lvel + self.mat:applyDir(impulse) * absorbed -- back to world for lvel
+	self.avel = self.avel + self.mat:applyDir(dir) / ((#self.points) ^ 2) -- not a magic number truet
 end
 
 function RigidBody:getSpatialVelocity(lpos)
-	local r = self.mat:applyDir(lpos)      -- local offset -> world space
-	return self.lvel + self.avel:cross(r)  -- ω × r, all world space
+	local r = self.mat:applyDir(lpos)   -- local offset -> world space
+	return self.lvel + self.avel:cross(r) -- ω × r, all world space
 end
 
 ---@param pos Vector3
@@ -141,7 +144,7 @@ local MODEL = models:newPart("boat", "WORLD")
 MODEL:newBlock("display")
 	 :block("minecraft:furnace")
 	 :pos(8, -8, -8)
-	 :rot(0,-90,0)
+	 :rot(0, -90, 0)
 
 
 local ltime = client:getSystemTime()
@@ -166,81 +169,63 @@ events.WORLD_RENDER:register(function()
 			local b = body.mat.c4.xyz + body.avel * 2
 			body.debug.axis:setAB(a, b)
 		end
-		body.avel = body.avel * 0.999
-		body.lvel = body.lvel * 0.999
-		body.lvel = body.lvel - vec(0, 0.1, 0)
 		
-		-- for each corner of the cube
-		for z = -2, 2, 4 do
-			for y = -0.5, 0.5, 1 do
-				for x = -2, 2, 4 do
-					local offset = vec(x, y, z)
-					local pos = body.mat:apply(offset)
-					particles["end_rod"]:pos(pos):gravity(0):lifetime(20):velocity(0,0,0):spawn()
-					local penetration = world.getHeight(pos.x,pos.z,"WORLD_SURFACE")
-					local height = math.max(penetration, HEIGHT)
-					if pos.y < height then
-						body.avel = body.avel * 0.99
-						body.lvel = body.lvel * 0.995
-						local dir = body.mat:applyDir(0,(height-pos.y)*0.05,0)
-						body:applyImpulse(pos.x, pos.y, pos.z, dir.x,dir.y,dir.z)
-					end
-				end
+		body.lvel = body.lvel - vec(0, 0.1, 0)
+		local collided = false
+		for index, pos in ipairs(body.points) do
+			local pos = body.mat:apply(pos)
+			local _, hitpos = raycast:block(pos + vec(0, 8, 0), pos.x_z)
+			local height = math.max(hitpos.y, HEIGHT)
+			if pos.y < height then
+				collided = true
+				local dir = body.mat:applyDir(0, (height - pos.y) * 0.08, 0)
+				body:applyImpulse(pos.x, pos.y, pos.z, dir.x, math.abs(dir.y), dir.z)
+				particles["end_rod"]:pos(pos.x,height,pos.z):gravity(0):lifetime(20):scale(8):velocity(0, 0, 0):spawn()
+			end
+
+			local dmat = body.mat:copy()
+			dmat.c4 = (dmat.c4.xyz * 16):augmented(1)
+			if body.model then
+				body.model:setMatrix(dmat)
 			end
 		end
-
-		local dmat = body.mat:copy()
-		dmat.c4 = (dmat.c4.xyz * 16):augmented(1)
-		if body.model then
-			body.model:setMatrix(dmat)
+		if collided then
+			body.avel = body.avel * 0.99
+			body.lvel = body.lvel * 0.99
+		else
+			body.avel = body.avel * 0.999
+			body.lvel = body.lvel * 0.999
+		end
+		
+		if KEYBINDS.forward:isPressed() then
+			local p = body:getPos()
+			local v = body.mat:applyDir(0, 0, -5)
+			body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
+		end
+		if KEYBINDS.left:isPressed() then
+			local p = body.mat:apply(-(#body.points)^1.5, 0, 0)
+			local v = body.mat:applyDir(0, 0, 1)
+			body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
+		end
+		if KEYBINDS.right:isPressed() then
+			local p = body.mat:apply((#body.points)^1.5, 0, 0)
+			local v = body.mat:applyDir(0, 0, 1)
+			body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
 		end
 	end
 end)
-
---[=[
+--[ [
 
 local hitLine = Line.new():setColor(0, 1, 0)
-
-
-local body = RigidBody.new(MODEL)
---body.mat:rotateY(120)
-body:setLVel(0, 0, 0)
-	 :setPos(0, HEIGHT+4, 0)
-:setAVel(0.5, 0, 1, 1)
 
 
 
 
 events.TICK:register(function()
-	local pos = player:getPos():add(0, player:getEyeHeight())
-	local dir = player:getLookDir()
-	local hitPos, hitDir = body:raycast(pos, dir * 20)
-	if hitPos then
-		hitLine:setAB(hitPos, hitPos + hitDir)
-	end
 	--particles["end_rod"]:pos(hitPos):spawn():lifetime(0)
-	if player:getSwingTime() == 1 then
-		dir = dir * 10
-		body:applyImpulse(hitPos.x, hitPos.y, hitPos.z, dir.x, dir.y, dir.z)
-	end
-	if CONTROLS.forward:isPressed() then
-		local p = body:getPos()
-		local v = body.mat:applyDir(0,0,1)
-		body:applyImpulse(p.x,p.y,p.z, v.x, v.y, v.z)
-	end
-	if CONTROLS.left:isPressed() then
-		local p = body.mat:apply(-1,0,0)
-		local v = body.mat:applyDir(0,0,1)
-		body:applyImpulse(p.x,p.y,p.z, v.x, v.y, v.z)
-	end
-	if CONTROLS.right:isPressed() then
-		local p = body.mat:apply(1,0,0)
-		local v = body.mat:applyDir(0,0,1)
-		body:applyImpulse(p.x,p.y,p.z, v.x, v.y, v.z)
-	end
 end)
 
 
-]=]
+--]]
 
 return RigidBody

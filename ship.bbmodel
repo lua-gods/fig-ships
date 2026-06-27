@@ -6034,6 +6034,7 @@
 			"to": [8, 8, 24],
 			"autouv": 1,
 			"color": 9,
+			"visibility": false,
 			"origin": [0, 0, 16],
 			"faces": {
 				"north": {
@@ -6076,6 +6077,7 @@
 			"to": [7, 16, -8],
 			"autouv": 1,
 			"color": 9,
+			"visibility": false,
 			"origin": [0, 13, -13],
 			"faces": {
 				"north": {
@@ -6118,6 +6120,7 @@
 			"to": [8, 8, -24],
 			"autouv": 1,
 			"color": 9,
+			"visibility": false,
 			"origin": [0, 0, -29],
 			"faces": {
 				"north": {
@@ -6160,6 +6163,7 @@
 			"to": [8, 8, 40],
 			"autouv": 1,
 			"color": 9,
+			"visibility": false,
 			"origin": [0, 0, 35],
 			"faces": {
 				"north": {
@@ -6202,6 +6206,7 @@
 			"to": [8, 16, 8],
 			"autouv": 1,
 			"color": 9,
+			"visibility": false,
 			"origin": [0, 13, 3],
 			"faces": {
 				"north": {
@@ -6244,6 +6249,7 @@
 			"to": [8, 13, -8],
 			"autouv": 1,
 			"color": 9,
+			"visibility": false,
 			"origin": [0, 8, -13],
 			"faces": {
 				"north": {
@@ -6286,6 +6292,7 @@
 			"to": [3, 22, 3],
 			"autouv": 1,
 			"color": 9,
+			"visibility": false,
 			"origin": [0, 16, 3],
 			"faces": {
 				"north": {
@@ -6328,6 +6335,7 @@
 			"to": [4, 12, -27],
 			"autouv": 1,
 			"color": 9,
+			"visibility": false,
 			"origin": [0, 2, -28],
 			"faces": {
 				"north": {
@@ -6370,6 +6378,7 @@
 			"to": [4, 14, 36],
 			"autouv": 1,
 			"color": 9,
+			"visibility": false,
 			"origin": [0, 11, 31],
 			"faces": {
 				"north": {
@@ -6412,6 +6421,7 @@
 			"to": [8, 8, 8],
 			"autouv": 1,
 			"color": 9,
+			"visibility": false,
 			"origin": [0, 0, 0],
 			"faces": {
 				"north": {
@@ -6464,7 +6474,7 @@
 			"mirror_uv": false,
 			"visibility": true,
 			"autouv": 0,
-			"isOpen": false,
+			"isOpen": true,
 			"primary_selected": false
 		},
 		{
@@ -6510,7 +6520,7 @@
 			"mirror_uv": false,
 			"visibility": true,
 			"autouv": 0,
-			"isOpen": false,
+			"isOpen": true,
 			"primary_selected": false
 		},
 		{
@@ -6556,7 +6566,7 @@
 			"mirror_uv": false,
 			"visibility": true,
 			"autouv": 0,
-			"isOpen": false,
+			"isOpen": true,
 			"primary_selected": false
 		},
 		{
@@ -6625,7 +6635,7 @@
 			"mirror_uv": false,
 			"visibility": true,
 			"autouv": 0,
-			"isOpen": false,
+			"isOpen": true,
 			"primary_selected": false
 		},
 		{
@@ -6648,7 +6658,7 @@
 			"mirror_uv": false,
 			"visibility": true,
 			"autouv": 0,
-			"isOpen": false,
+			"isOpen": true,
 			"primary_selected": false
 		},
 		{
@@ -6671,7 +6681,7 @@
 			"mirror_uv": false,
 			"visibility": true,
 			"autouv": 0,
-			"isOpen": false,
+			"isOpen": true,
 			"primary_selected": false
 		},
 		{
@@ -6694,7 +6704,7 @@
 			"mirror_uv": false,
 			"visibility": true,
 			"autouv": 0,
-			"isOpen": false,
+			"isOpen": true,
 			"primary_selected": false
 		},
 		{
@@ -7206,7 +7216,7 @@
 				},
 				{
 					"uuid": "48635113-b757-ca79-777d-3e0dd0652b9c",
-					"isOpen": false,
+					"isOpen": true,
 					"children": [
 						"9fa9485e-9c7e-a71a-2c4f-6b91e73cf1b1",
 						{
@@ -7263,7 +7273,7 @@
 				},
 				{
 					"uuid": "264c885e-2b8f-5e22-0288-f24b445a9d72",
-					"isOpen": false,
+					"isOpen": true,
 					"children": [
 						"92274b7c-e70c-9979-3438-b6eb1d0fee32",
 						{
@@ -7276,7 +7286,7 @@
 				},
 				{
 					"uuid": "861711dd-86a0-66c0-eb0f-71b3a4fcc39f",
-					"isOpen": false,
+					"isOpen": true,
 					"children": [
 						"fd3871ca-8022-6fb3-c60c-298235878700",
 						{
@@ -7289,7 +7299,7 @@
 				},
 				{
 					"uuid": "ff9dab58-d267-52ba-3ce5-fb7200b0b360",
-					"isOpen": false,
+					"isOpen": true,
 					"children": [
 						"a4070639-1694-ad26-e1e0-6d21f5637ac4",
 						{
@@ -7302,7 +7312,7 @@
 				},
 				{
 					"uuid": "ade7ecea-662c-c098-85e9-5a1700508dce",
-					"isOpen": false,
+					"isOpen": true,
 					"children": [
 						"cefdc796-f7e9-4ec2-7c25-cb23f0f8a593",
 						{
@@ -7320,7 +7330,7 @@
 				},
 				{
 					"uuid": "e4291eac-5c42-7261-6a95-4f0ae502c32a",
-					"isOpen": false,
+					"isOpen": true,
 					"children": [
 						"fd842578-de3e-f10f-71b4-5f4b33264d89",
 						{
@@ -7333,7 +7343,7 @@
 				},
 				{
 					"uuid": "c10f2683-51f5-3cdd-9b92-d8e17020703a",
-					"isOpen": false,
+					"isOpen": true,
 					"children": [
 						{
 							"uuid": "71622926-afdf-0ea9-aed2-e00e4d271c1d",
