@@ -26,6 +26,7 @@ return Macros.new(function (events, ...)
 	
 	local points = {}
 	local i = 0
+	local center = vec(0,0,0)
 	local min = vec(YOUR_MOM, YOUR_MOM, YOUR_MOM)
 	local max = vec(-YOUR_MOM, -YOUR_MOM, -YOUR_MOM)
 	for index, aabb in ipairs(SHIP.hitbox) do
@@ -35,16 +36,23 @@ return Macros.new(function (events, ...)
 					i = i + 1
 					local pos = vec(x,y,z)
 					points[i] = pos
+					center = center + pos
 					min = vec(math.min(min.x, pos.x), math.min(min.y, pos.y), math.min(min.z, pos.z))
 					max = vec(math.max(max.x, pos.x), math.max(max.y, pos.y), math.max(max.z, pos.z))
 				end
 			end
 		end
 	end
+	center = center / i
 	body.size = (max - min)
 	body.points = points
-	body:setPos(player:getPos():add(0,20,0))
+	local ppos = player:getPos()
+	body:setPos(ppos.x, SEA_LEVEL + 5,ppos.z)
 	body.model = SHIP.model
+	SHIP.body = body
+	BODY = body
+	body.center = center
+	body.ship = SHIP
 	events.POST_WORLD_RENDER:register(function (delta)
 		PanCamera.setPos(body:getPos())
 	end)

@@ -3,13 +3,36 @@
 local SHIP_SCALE = 8
 local GNCommon = require("lib.GNcommon")
 
+local THROTTLE_STRENGTH = 2
+local STEER_STRENGTH = 0.04
+
+local KEYBINDS = require("auto.host.keybinds")
+
 local zLib = require("lib.zlib")
 
 ---@type table<string,Ship.Part.Identity>
 local PARTS_ENTRY = {
 	["Front Hull"] = {},
 	["Hull"] = {},
-	["Back Hull"] = {},
+	["Back Hull"] = {
+		process = function (part, ship, body)
+			if KEYBINDS.forward:isPressed() then
+			local p = body:getPos()
+			local v = body.mat:applyDir(0, 0, -THROTTLE_STRENGTH)
+			body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
+		end
+		if KEYBINDS.left:isPressed() then
+			local p = body.mat:apply(-(#body.points)^1.5*STEER_STRENGTH, 0, 0)
+			local v = body.mat:applyDir(0, 0, 1)
+			body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
+		end
+		if KEYBINDS.right:isPressed() then
+			local p = body.mat:apply((#body.points)^1.5*STEER_STRENGTH, 0, 0)
+			local v = body.mat:applyDir(0, 0, 1)
+			body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
+		end
+		end
+	},
 
 	["Control Room"] = {},
 
@@ -69,7 +92,7 @@ Ship.__index = Ship
 ---@field bounds {min:Vector3, max:Vector3}?
 ---@field studs {pos:Vector3, rot:Vector3}[]
 ---@field desc string?
----@field process fun()?
+---@field process fun(part:Ship.Part, ship:Ship,body: GN.RigidBody)?
 
 
 ---@class Ship.Part
@@ -125,7 +148,8 @@ for index, model in ipairs(models.ship.Parts:getChildren()) do
 	parts.model = models:newPart(name)
 		 :remove()
 		 :addChild(
-			 model:setPos(-offset)
+			 model
+			 :setPos(-offset)
 			 :remove()
 		 )
 	parts.skullIcon = skullIcon

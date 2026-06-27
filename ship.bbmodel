@@ -6116,11 +6116,10 @@
 			"export": true,
 			"scope": 0,
 			"allow_mirror_modeling": true,
-			"from": [-8, 0, -56],
+			"from": [-8, 0, -40],
 			"to": [8, 8, -24],
 			"autouv": 1,
 			"color": 9,
-			"visibility": false,
 			"origin": [0, 0, -29],
 			"faces": {
 				"north": {

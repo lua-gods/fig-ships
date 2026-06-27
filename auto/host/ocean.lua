@@ -5,7 +5,6 @@ if not host:isHost() then return end
 local LAYERS = 20
 local LAYER_SCALE = 1
 local SEA_SIZE = 128
-SEA_LEVEL = 103.9
 
 
 local world = models:newPart("world","WORLD"):scale(16,16,16)
@@ -150,7 +149,7 @@ local timer = 0
 events.WORLD_TICK:register(function ()
 	timer = timer -1
 	if timer < 0 then
-		timer = math.random(20,40)
-		playSound("Ocean "..math.random(1,3),rand(0.8,1.1),0.1)
+		timer = math.random(30,40)
+		playSound("Ocean "..math.random(1,3),rand(0.7,1.2),0.1)
 	end
 end)

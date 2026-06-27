@@ -14,7 +14,6 @@ local GNCommon = require("lib.GNcommon")
 local Line = require("lib.GNLine")
 
 local HEIGHT = 104
-local KEYBINDS = require("auto.keybinds")
 
 local face2dir = {
 	["north"] = vec(0, 0, -1),
@@ -38,6 +37,8 @@ local face2dir = {
 ---@field debug table
 ---@field size Vector3
 ---@field points Vector3[]
+---@field wetPoints boolean[]
+---@field ship Ship
 local RigidBody = {}
 RigidBody.__index = RigidBody
 
@@ -51,6 +52,7 @@ function RigidBody.new(model)
 	local self = {
 		model = model,
 		mass = 0,
+		wetPoints = {},
 		intertia = vec(0, 0, 0),
 		center = vec(0, 0, 0),
 		lvel = vec(0, 0, 0),
@@ -103,21 +105,24 @@ local impulseLine = Line.new():setColor(0, 0, 1)
 
 --- applies impulse force to angular velocty
 function RigidBody:applyImpulse(x, y, z, fx, fy, fz)
-	local lmat = self.mat:inverted()
+	local mat = self.mat:copy()
+	local offcenter = self.mat:applyDir(self.center)
+	mat:translate(offcenter)
+	local lmat = mat:inverted()
 	local pos = lmat:apply(GNCommon.vec3(x, y, z))
-	local impulse = lmat:applyDir(GNCommon.vec3(fx, fy, fz)):div(self.size) -- transform direction too
+	local impulse = lmat:applyDir(GNCommon.vec3(fx, fy, fz)) -- transform direction too
 	local dir = (pos):cross(impulse)
 	local p = self:getPos()
 	impulseLine:setAB(p, p + dir:normalized())
-	local absorbed = 1 - ((dir / self.size):length() / impulse:length())
+	local absorbed = 1 - ((dir):length() / impulse:length())
 	absorbed = math.clamp(absorbed, 0.1, 0.9)
-	self.lvel = self.lvel + self.mat:applyDir(impulse) * absorbed -- back to world for lvel
-	self.avel = self.avel + self.mat:applyDir(dir) / ((#self.points) ^ 2) -- not a magic number truet
+	self.lvel = self.lvel + mat:applyDir(impulse) * absorbed -- back to world for lvel
+	self.avel = self.avel + mat:applyDir(dir) / ((#self.points) ^ 2) -- not a magic number truet
 end
 
 function RigidBody:getSpatialVelocity(lpos)
 	local r = self.mat:applyDir(lpos)   -- local offset -> world space
-	return self.lvel + self.avel:cross(r) -- ω × r, all world space
+	return self.lvel + self.avel:copy():cross(r) -- ω × r, all world space
 end
 
 ---@param pos Vector3
@@ -153,9 +158,10 @@ events.WORLD_RENDER:register(function()
 	local delta = (time - ltime) / 1000
 	ltime = time
 	for id, body in pairs(rigidBodies) do
-		body.mat
-			 :translate(body.lvel * delta)
-
+		local offcenter = body.mat:applyDir(body.center)
+		body.mat:translate(body.lvel * delta)
+		body.mat:translate(-offcenter)
+		
 		local angle = math.deg(body.avel:length()) * delta
 		local axis = body.avel:normalized()
 		if angle > 0 then
@@ -172,15 +178,27 @@ events.WORLD_RENDER:register(function()
 		
 		body.lvel = body.lvel - vec(0, 0.1, 0)
 		local collided = false
-		for index, pos in ipairs(body.points) do
-			local pos = body.mat:apply(pos)
+		for index, lpos in ipairs(body.points) do
+			local pos = body.mat:apply(lpos)
 			local _, hitpos = raycast:block(pos + vec(0, 8, 0), pos.x_z)
 			local height = math.max(hitpos.y, HEIGHT)
 			if pos.y < height then
 				collided = true
+				local lvel = body:getSpatialVelocity(lpos)
 				local dir = body.mat:applyDir(0, (height - pos.y) * 0.08, 0)
+				--particles:newParticle("minecraft:poof",pos,lvel*0.05):lifetime(20):setGravity(3):scale(8):spawn()
 				body:applyImpulse(pos.x, pos.y, pos.z, dir.x, math.abs(dir.y), dir.z)
-				particles["end_rod"]:pos(pos.x,height,pos.z):gravity(0):lifetime(20):scale(8):velocity(0, 0, 0):spawn()
+				
+				-- splash code
+				if (lvel:length() * 0.05) > 0.5 then
+					particles["end_rod"]:pos(pos.x,height,pos.z):gravity(0.1):lifetime(40):scale(8):velocity(lvel * 0.04 + vec(math.random()-0.5,0,math.random()-0.5)*0.4):spawn()
+					if not body.wetPoints[index] then
+						sounds:playSound("minecraft:entity.player.splash.high_speed",pos,0.2,math.lerp(0.3,0.4,math.random())):attenuation(3)
+						body.wetPoints[index] = true
+					end
+				end
+			else
+				body.wetPoints[index] = false
 			end
 
 			local dmat = body.mat:copy()
@@ -197,20 +215,12 @@ events.WORLD_RENDER:register(function()
 			body.lvel = body.lvel * 0.999
 		end
 		
-		if KEYBINDS.forward:isPressed() then
-			local p = body:getPos()
-			local v = body.mat:applyDir(0, 0, -5)
-			body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
-		end
-		if KEYBINDS.left:isPressed() then
-			local p = body.mat:apply(-(#body.points)^1.5, 0, 0)
-			local v = body.mat:applyDir(0, 0, 1)
-			body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
-		end
-		if KEYBINDS.right:isPressed() then
-			local p = body.mat:apply((#body.points)^1.5, 0, 0)
-			local v = body.mat:applyDir(0, 0, 1)
-			body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
+		body.mat:translate(offcenter)
+		
+		for index, part in pairs(body.ship.parts) do
+			if part.identity.process then
+				part.identity.process(part, body.ship, body)
+			end
 		end
 	end
 end)

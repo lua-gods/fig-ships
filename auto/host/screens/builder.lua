@@ -3,7 +3,7 @@ local Macros = require("lib.GNMacros")
 local Tween = require("lib.GNtween")
 local Ship = require("lib.Ship")
 local PanCamera = require("lib.PanCamera")
-require("auto.ocean") -- make sure sea level is declared
+require("auto.host.ocean") -- make sure sea level is declared
 
 --────  CONFIG  ────────────────────────────────────────────────────────--
 
@@ -19,7 +19,7 @@ local HOVER_COLOR = vectors.hexToRGB("#cccccc")
 local SELECTED_COLOR = vectors.hexToRGB("#c3f278")
 local PRESSED_COLOR = vectors.hexToRGB("#999999")
 
-local KEYBINDS = require("auto.keybinds")
+local KEYBINDS = require("auto.host.keybinds")
 
 for key, value in pairs(KEYBINDS) do
 	value:gui(true)

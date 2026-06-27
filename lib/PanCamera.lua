@@ -1,6 +1,6 @@
 local GNCommon = require("lib.GNcommon")
 
-local KEYBINDS = require("auto.keybinds")
+local KEYBINDS = require("auto.host.keybinds")
 -- CAMERA CONTROLS
 local SENSITIVITY = 0.15
 local ZOOM_SPEED = 1.2

@@ -23,7 +23,7 @@ local MAX_SIZE_LIMIT = 1024 - 100
 local MAX_COUNT_LIMIT = 5
 
 -- [DEFAULT : 0.5] the timer to slow the syncer down in seconds, 0 for fast asf boi
-local PASSIVE_TIMER_INTERVAL = 0.5
+local PASSIVE_TIMER_INTERVAL = 0
 
 -- [DEFAULT : 10] the maximum amount of items a batch can have
 local MAX_ITEMS_PER_BATCH = 10
