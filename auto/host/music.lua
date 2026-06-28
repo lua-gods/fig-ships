@@ -11,7 +11,7 @@ local macro =  MacrosAPI.new(function(events, ...)
 	MusicPlayer
 		 :setTrack(track)
 		 :play()
-		 :setVolume(0.5)
+		 :setVolume(0.7)
 
 	events.WORLD_RENDER:register(function(delta)
 		MusicPlayer

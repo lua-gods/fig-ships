@@ -89,15 +89,6 @@ local function notObscured()
 	return not (action_wheel:isEnabled()) and (not host:getScreen()) or host:isChatOpen()
 end
 
-local function namedHead(name)
-	local u1, u2, u3, u4 = client.uuidToIntArray(player:getUUID())
-	local item =
-	[=[minecraft:player_head[profile={id:[I;%s,%s,%s,%s]},custom_name='{"text":"%s"}']]]=]
-	item = item:format(u1, u2, u3, u4, name)
-	return item
-end
-
-
 local function fancyTitle(title, desc)
 	return toJson {
 		{
@@ -187,9 +178,117 @@ return Macros.new(function(events, ...)
 			end
 		end
 	end
+	
+	--────  USER INTERFACE  ────────────────────────────────────────────────────────--
+	local INSTRUCTIONS_HUD = models:newPart("ihud", "HUD")
+	local ACTIONBAR_HUD = models:newPart("abhud", "HUD")
+	
+	
+	local label = ACTIONBAR_HUD:newText("msg")
+	
+	label:setAlignment("CENTER")
+	:setOutline(true)
+	
+	local function msg(text)
+		label:setText(text)
+	end
+	
+	local rows = {}
+	
+	local i = 0
+	
+	local function clearInstructions(category)
+		if category then
+			if rows[category] then
+				for key, value in pairs(rows[category]) do
+					value:remove()
+				end
+			end
+			rows[category] = nil
+		else
+			for key, categories in pairs(rows) do
+				for key, value in pairs(categories) do
+					value:remove()
+				end
+			end
+		end
+	end
+	
+	local function realizeInstructionRows()
+		local i = 0
+		for key, group in pairs(rows) do
+			for key, row in pairs(group) do
+				i = i + 1
+				row:setPos(-3,i * 13,0)
+			end
+		end
+	end
+	
+	
+	local function newInstruction(key,desc,category)
+		category = category or "default"
+		i = i + 1
+		local row = INSTRUCTIONS_HUD:newPart("row"..i)
+		if key:find("^textures") then
+			local tex = textures[key]
+			local dim = tex:getDimensions()
+			row:newSprite("key"..i)
+			:setTexture(tex,dim.x,dim.y)
+			:setPos(dim.x+4,1)
+		else
+			
+			row:newText("key"..i)
+			:setText('{"text":"'..key..'","color":"#535353"}')
+			:alignment("RIGHT")
+			:setPos(5,1)
+			
+			local tex = textures["textures.btn"]
+			local dim = tex:getDimensions()
+			row:newSprite("keybg"..i)
+			:setTexture(tex,dim.x,dim.y)
+			:setPos(dim.x+3,2,3)
+		end
+		
+		row:newText("desc"..i)
+		:setText(desc)
+		:alignment("LEFT")
+		:setOutline(true)
+		
+		rows[category] = rows[category] or {}
+		table.insert(rows[category], row)
+		
+		realizeInstructionRows()
+	end
 
-	action_wheel:setPage()
+	events.WORLD_RENDER:register(function (delta)
+		local windowSize = client:getScaledWindowSize()
+		INSTRUCTIONS_HUD:setPos(-windowSize.x * 0.5 - 107,-windowSize.y)
+		ACTIONBAR_HUD:setPos(-windowSize.x * 0.5, -windowSize.y + 60)
+	end)
+	
+	newInstruction("textures.rmb","Rotate Camera")
+	newInstruction("textures.mw","Zoom")
+	
+	local lastMode = 67
+	events.TICK:register(function ()
+		if lastMode ~= mode then
+			clearInstructions("tools")
+			if mode == 0 then
+				newInstruction("textures.lmb","Select","tools")
+				newInstruction("x","Delete","tools")
+			elseif mode == -1 then
+				newInstruction("textures.lmb","Paint","tools")
+			else
+				newInstruction("textures.lmb","Place","tools")
+				newInstruction("x","Delete","tools")
+				newInstruction("r","Rotate","tools")
+			end
+			lastMode = mode
+		end
+	end)
+	
 	--──── PAINT PAGE ────────────────────────────────────────────--
+	action_wheel:setPage()
 
 	paintPage:newAction()
 		 :setItem(namedHead("tex;textures.return"))
@@ -340,19 +439,21 @@ return Macros.new(function(events, ...)
 
 
 	SHIP:newPart(1)
+	local lastTitle = nil
 	events.WORLD_RENDER:register(function(delta)
 		local title = "..."
 
 		if mode == 0 then
-			title = ":cursor_1: Select Mode"
+			title = (":cursor_1: Select Mode")
 		elseif mode == -1 then
-			title = ":palette: Paint Mode"
+			title = (":palette: Paint Mode")
 		else
-			title = ":hammer_big: Placing " .. Ship.getShipPartIdentities()[mode].name
+			title = (":hammer_big: Placing " .. Ship.getShipPartIdentities()[mode].name)
 		end
-
-		host:setActionbar(title)
-
+		if title ~= lastTitle then
+			lastTitle = title
+			msg(title)
+		end
 
 		if not notObscured() then return end
 		local mpos = client:getMousePos()
@@ -518,16 +619,17 @@ return Macros.new(function(events, ...)
 		PanCamera.setPos()
 		isMusicActive = Music.isActive
 		Music:setActive(false)
+		
+		ACTIONBAR_HUD:remove()
+		INSTRUCTIONS_HUD:remove()
+		
 		config:setName("GN.ship")
 		config:save("music", isMusicActive)
 		host:setUnlockCursor()
-
+		clearInstructions()
 		for key, value in pairs(KEYBINDS) do
 			value.press = nil
 			value.release = nil
 		end
 	end)
-
-
-	--────  SKULL SHINANIGANS  ────────────────────────────────────────────────────────--
 end)

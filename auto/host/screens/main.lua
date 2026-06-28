@@ -4,13 +4,6 @@ local ICON = models.misc.SKULL
 ICON:setRot(30, -45)
 	 :setPrimaryRenderType("CUTOUT_EMISSIVE_SOLID")
 
-local function namedHead(name)
-	local u1, u2, u3, u4 = client.uuidToIntArray(player:getUUID())
-	local item =
-	[=[minecraft:player_head[profile={id:[I;%s,%s,%s,%s]},custom_name='{"text":"%s"}']]]=]
-	item = item:format(u1, u2, u3, u4, name)
-	return item
-end
 
 
 local function fancyTitle(title, desc)
@@ -78,7 +71,7 @@ return Macros.new(function(events, ...)
 	end
 
 	newAction("#9097D4", ":mci_mace: Build a Ship :mci_mace:", "Enter the Editor\nand build or deploy your shup!")
-		 :item("minecraft:mace")
+		 :item(namedHead("tex;textures.build"))
 		 :onLeftClick(function(self)
 			 setScreen("builder")
 		 end)

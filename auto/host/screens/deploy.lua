@@ -9,13 +9,6 @@ local function notObscured()
 	return not (action_wheel:isEnabled()) and (not host:getScreen()) or host:isChatOpen()
 end
 
-local function namedHead(name)
-	local u1, u2, u3, u4 = client.uuidToIntArray(player:getUUID())
-	local item =
-	[=[minecraft:player_head[profile={id:[I;%s,%s,%s,%s]},custom_name='{"text":"%s"}']]]=]
-	item = item:format(u1, u2, u3, u4, name)
-	return item
-end
 
 
 
