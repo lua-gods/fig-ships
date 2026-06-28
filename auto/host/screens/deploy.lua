@@ -5,6 +5,10 @@ local PanCamera = require("lib.PanCamera")
 
 local KEYBINDS = require("auto.host.keybinds")
 
+local function notObscured()
+	return not (action_wheel:isEnabled()) and (not host:getScreen()) or host:isChatOpen()
+end
+
 local function namedHead(name)
 	local u1, u2, u3, u4 = client.uuidToIntArray(player:getUUID())
 	local item =
@@ -12,6 +16,7 @@ local function namedHead(name)
 	item = item:format(u1, u2, u3, u4, name)
 	return item
 end
+
 
 
 local function fancyTitle(title, desc)
@@ -89,9 +94,12 @@ return Macros.new(function (events, ...)
 	
 	
 	for key, value in pairs(KEYBINDS) do
-		value.press = function () return true end
+		value.press = function () if notObscured() then
+			return true
+		end end
 		value.release = nil
 	end
+	KEYBINDS.esc.press = nil
 	
 	events.ON_EXIT:register(function ()
 		for key, value in pairs(KEYBINDS) do
