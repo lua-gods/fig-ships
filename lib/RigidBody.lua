@@ -11,7 +11,6 @@ Place required dependencies in the same folder as this script.
 
 ---@diagnostic disable: param-type-mismatch
 local GNCommon = require("lib.GNcommon")
-local Line = require("lib.GNLine")
 
 local HEIGHT = 104
 
@@ -64,7 +63,6 @@ function RigidBody.new(model)
 		points = {},
 	}
 
-	self.debug.axis = Line.new():setColor(1, 0.5, 0)
 	setmetatable(self, RigidBody)
 	rigidBodies[id] = self
 	return self
@@ -101,7 +99,6 @@ function RigidBody:setInteria(x, y, z)
 	return self
 end
 
-local impulseLine = Line.new():setColor(0, 0, 1)
 
 --- applies impulse force to angular velocty
 function RigidBody:applyImpulse(x, y, z, fx, fy, fz)
@@ -113,7 +110,6 @@ function RigidBody:applyImpulse(x, y, z, fx, fy, fz)
 	local impulse = lmat:applyDir(GNCommon.vec3(fx, fy, fz)) -- transform direction too
 	local dir = (pos):cross(impulse)
 	local p = self:getPos()
-	impulseLine:setAB(p, p + dir:normalized())
 	local absorbed = 1 - ((dir):length() / impulse:length())
 	absorbed = math.clamp(absorbed, 0.1, 0.9)
 	self.lvel = self.lvel + mat:applyDir(impulse) * absorbed -- back to world for lvel
@@ -226,7 +222,6 @@ events.WORLD_RENDER:register(function()
 end)
 --[ [
 
-local hitLine = Line.new():setColor(0, 1, 0)
 
 
 
