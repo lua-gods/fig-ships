@@ -128,6 +128,7 @@ return Macros.new(function(events, ...)
 	local hoveredPart ---@type Ship.Part?
 	local selectedPart ---@type Ship.Part?
 	local placementPos
+	local placementRot = 0
 	local placementDir
 
 	PanCamera.setPos(shipPos)
@@ -271,7 +272,7 @@ return Macros.new(function(events, ...)
 	actions[-1] = buildPage:newAction()
 		 :setItem(namedHead("tex;textures.paint"))
 		 :setTitle(fancyTitle("Paint",
-			 "Chose a color and select a part to paint\n[TIP]: type to search for the block!"))
+			 "Chose a color and select a part to paint!"))
 		 :onLeftClick(function(self)
 			 mode = -1
 			 setSelectedPart()
@@ -376,6 +377,8 @@ return Macros.new(function(events, ...)
 			placementPos = nil
 		end
 
+		placementRot = placementRot
+		
 		if preview then
 			if placementPos then
 				if SHIP:isOccupied(placementPos * 16) then
@@ -384,6 +387,7 @@ return Macros.new(function(events, ...)
 					preview:setColor(1, 1, 1)
 				end
 				preview:setPos((placementPos * SHIP.scale + shipPos) * 16)
+				:setRot(0,placementRot*90,0)
 			else
 				preview:setPos(0, -6942067, 0)
 			end
@@ -443,7 +447,7 @@ return Macros.new(function(events, ...)
 				if placementPos and not SHIP:isOccupied(placementPos * 16) then
 					--playSound("minecraft:block.iron_trapdoor.close", 0.5)
 					playSound("minecraft:block.iron_door.close", 0.5)
-					local part = SHIP:newPart(mode, placementPos * 16, 0)
+					local part = SHIP:newPart(mode, placementPos * 16, placementRot)
 					Tween.new {
 						from = (part.pos + placementDir * 16) * SHIP.scale,
 						to = (part.pos * SHIP.scale),
@@ -496,12 +500,10 @@ return Macros.new(function(events, ...)
 		end
 	end)
 
-	KEYBINDS.vineboom:onPress(function(modifiers, self)
-		local data = SHIP:packData()
-		SHIP:unpackData(data)
+	KEYBINDS.rotate:onPress(function (modifiers, self)
+		placementRot = (placementRot + 1) % 4
+		return true
 	end)
-
-
 
 	events.ON_EXIT:register(function()
 		renderer:renderRightArm()

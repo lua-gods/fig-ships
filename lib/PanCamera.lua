@@ -13,7 +13,7 @@ local ZOOM_EASING = 20
 local camPos = nil
 local targetCamPos = nil
 local zoom = nil
-local targetZoom = nil
+local targetZoom = DEFAULT_ZOOM
 local rot = vec(25, -45)
 
 
@@ -61,7 +61,7 @@ events.MOUSE_MOVE:register(function(x, y)
 end)
 
 events.MOUSE_SCROLL:register(function(dir)
-	if notObscured() then
+	if notObscured() and dir then
 		targetZoom = math.max(targetZoom * ZOOM_SPEED ^ -dir, 1)
 		return false
 	end

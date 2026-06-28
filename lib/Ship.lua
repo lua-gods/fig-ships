@@ -99,7 +99,7 @@ Ship.__index = Ship
 ---@field pos Vector3
 ---@field rot integer
 ---@field model ModelPart
----@field paint Minecraft.blockID
+---@field paint integer
 
 --────  PARSING  ────────────────────────────────────────────────────────--
 
@@ -200,7 +200,7 @@ function Ship:newPart(id, pos, rot)
 				 :setPos(pos * SHIP_SCALE)
 				 :setScale(SHIP_SCALE)
 				 :setRot(0, rot * 90, 0),
-			paint = nil,
+			paint = 0,
 		}
 
 		self.parts[id] = part
@@ -236,14 +236,15 @@ end
 function Ship:paintPart(id, index)
 	local part = self.parts[id]
 	if not part then return end
-	part.paint = PAINT_BLOCKS[index]
-	if part.paint then
-		local tex = world.newBlock(part.paint):getTextures()
+	if PAINT_BLOCKS[index] then
+		local tex = world.newBlock(PAINT_BLOCKS[index]):getTextures()
 		local path = tex[next(tex)]
 		path = path[1]
 		part.model:setPrimaryTexture("RESOURCE", path .. ".png")
+		part.paint = index
 	else
 		part.model:setPrimaryTexture("PRIMARY")
+		part.paint = 0
 	end
 	return self
 end
@@ -254,14 +255,21 @@ function Ship:recalculateHitbox()
 	for id, part in pairs(self.parts) do
 		local mat = matrices.mat4()
 		mat:scale(SHIP_SCALE)
+		mat:translate(SHIP_SCALE * 0.5,0,SHIP_SCALE * 0.5)
 		mat:rotate(0, part.rot * 90, 0)
+		mat:translate(-SHIP_SCALE * 0.5,0,-SHIP_SCALE * 0.5)
 		mat:translate(part.pos * SHIP_SCALE)
 
 		local bounds = part.identity.bounds
 
+		local a = mat:apply(bounds.min) / 16
+		local b = mat:apply(bounds.max) / 16
+		local min = vec(math.min(a.x, b.x), math.min(a.y, b.y), math.min(a.z, b.z))
+		local max = vec(math.max(a.x, b.x), math.max(a.y, b.y), math.max(a.z, b.z))
+		
 		self.hitbox[id] = {
-			mat:apply(bounds.min) / 16,
-			mat:apply(bounds.max) / 16,
+			min,
+			max
 		}
 	end
 	return self
@@ -308,9 +316,7 @@ function Ship:packData()
 		buffer:write(part.pos.y)
 		buffer:write(part.pos.z+128)
 		buffer:write(part.rot)
-		local paint = part.paint or ""
-		buffer:write(#paint)
-		buffer:writeString(paint,"ascii")
+		buffer:write(part.paint)
 	end
 	buffer:setPosition(0)
 	local out = buffer:readByteArray()
@@ -332,10 +338,9 @@ function Ship:unpackData(packedData)
 			local y = buffer:read()
 			local z = buffer:read()-128
 			local rot = buffer:read()
-			local len = buffer:read()
-			local paint = buffer:readString(len,"ascii")
+			local paint = buffer:read()
 			local part = self:newPart(id, vec(x, y, z), rot)
-			if #paint > 0 then
+			if part then
 				self:paintPart(part.id, paint)
 			end
 		end

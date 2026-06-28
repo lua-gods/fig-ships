@@ -3,7 +3,7 @@ local Ship = require("lib.Ship")
 local RigidBody = require("lib.RigidBody")
 local PanCamera = require("lib.PanCamera")
 
-
+local KEYBINDS = require("auto.host.keybinds")
 
 local function namedHead(name)
 	local u1, u2, u3, u4 = client.uuidToIntArray(player:getUUID())
@@ -86,7 +86,18 @@ return Macros.new(function (events, ...)
 	events.POST_WORLD_RENDER:register(function (delta)
 		PanCamera.setPos(body:getPos())
 	end)
+	
+	
+	for key, value in pairs(KEYBINDS) do
+		value.press = function () return true end
+		value.release = nil
+	end
+	
 	events.ON_EXIT:register(function ()
+		for key, value in pairs(KEYBINDS) do
+			value.press = nil
+			value.release = nil
+		end
 		body.model = nil
 		host.unlockCursor = false
 		renderer:renderRightArm()
