@@ -1,7 +1,9 @@
 if host:isHost() then
-	for key, value in pairs(listFiles("auto.host")) do
-		require(value)
-	end
+	events.ENTITY_INIT:register(function()
+		for key, value in pairs(listFiles("auto.host")) do
+			require(value)
+		end
+	end)
 else
 	for key, value in pairs(listFiles("auto.remote")) do
 		print(value)

@@ -3,22 +3,49 @@ local Ship = require("lib.Ship")
 local RigidBody = require("lib.RigidBody")
 local PanCamera = require("lib.PanCamera")
 
-local CONTROLS = {
-	forward = keybinds:fromVanilla("key.forward"),
-	backward = keybinds:fromVanilla("key.back"),
-	left = keybinds:fromVanilla("key.left"),
-	right = keybinds:fromVanilla("key.right")
-}
 
-for key, value in pairs(CONTROLS) do
-	value.press = function (modifiers, self)
-		return true
-	end
+
+local function namedHead(name)
+	local u1, u2, u3, u4 = client.uuidToIntArray(player:getUUID())
+	local item =
+	[=[minecraft:player_head[profile={id:[I;%s,%s,%s,%s]},custom_name='{"text":"%s"}']]]=]
+	item = item:format(u1, u2, u3, u4, name)
+	return item
 end
+
+
+local function fancyTitle(title, desc)
+	return toJson {
+		{
+			color = "gray",
+			text = "",
+		},
+		{
+			text = title,
+			color = "white",
+			bold = true,
+		},
+		{
+			text = "\n" .. desc,
+		},
+	}
+end
+
 
 local YOUR_MOM = math.huge
 
 return Macros.new(function (events, ...)
+	
+	local page = action_wheel:newPage()
+	page:newAction()
+	:setTitle(fancyTitle("Return,","Return back to the drawing board"))
+	:setItem(namedHead("tex;textures.return"))
+	:onLeftClick(function(self)
+		setScreen("builder")
+	end)
+	
+	action_wheel:setPage(page)
+	
 	host.unlockCursor = true
 	renderer:renderRightArm(false)
 		renderer:renderLeftArm(false)
@@ -49,14 +76,18 @@ return Macros.new(function (events, ...)
 	local ppos = player:getPos()
 	body:setPos(ppos.x, SEA_LEVEL + 5,ppos.z)
 	body.model = SHIP.model
+	
 	SHIP.body = body
+	SHIP.model:setVisible(true)
 	BODY = body
 	body.center = center
 	body.ship = SHIP
+	
 	events.POST_WORLD_RENDER:register(function (delta)
 		PanCamera.setPos(body:getPos())
 	end)
 	events.ON_EXIT:register(function ()
+		body.model = nil
 		host.unlockCursor = false
 		renderer:renderRightArm()
 		renderer:renderLeftArm()

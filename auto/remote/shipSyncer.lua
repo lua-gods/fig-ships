@@ -47,7 +47,7 @@ events.RENDER:register(function(_, ctx, matrix)
 				lastShip = Sync.ship
 
 				points = {}
-				
+
 				local i = 0
 				local center = vec(0, 0, 0)
 				for index, aabb in ipairs(ship.hitbox) do
@@ -87,31 +87,35 @@ events.RENDER:register(function(_, ctx, matrix)
 				mat.c2 = axis2:augmented(0)
 				mat.c3 = (axis1:copy():cross(axis2)):augmented(0)
 				mat:translate(pos * 16)
-
 			end
 		end
 		if lastMat and mat then
 			local time = client:getSystemTime()
 			local timeSinceLast = (time - lastTime) / averageTime
 			local slideMat = math.lerp(lastMat, mat, timeSinceLast)
-			
+
 			local lastFinalMat = finalMat and finalMat:copy()
 			finalMat = finalMat and math.lerp(finalMat, slideMat, BLEND_MAT * delta) or slideMat:copy()
-			
+
 			if lastFinalMat and finalMat then
 				for index, value in ipairs(points) do
 					local pos = finalMat:apply(value * 16)
-					local height = math.max(pos.y/16, SEA_LEVEL)
-					local lvel = (finalMat:apply(pos)-lastFinalMat:apply(pos)) / 16
-					if SEA_LEVEL+1 >= height then
+					local height = math.max(pos.y / 16, SEA_LEVEL)
+					local lvel = (finalMat:apply(pos) - lastFinalMat:apply(pos)) / 16
+					if SEA_LEVEL + 1 >= height then
 						if lvel:length() > 0.5 then
-							particles["end_rod"]:pos(pos.x/16,height,pos.z/16):gravity(0.1):lifetime(40):scale(8):velocity(lvel * 0.04 + vec(math.random()-0.5,0,math.random()-0.5)*0.4):spawn()
+							particles["end_rod"]
+							:pos(pos.x / 16, height, pos.z / 16)
+							:gravity(0.1)
+							:lifetime(40)
+							:scale(8):velocity(lvel * 0.04 +
+							vec(math.random() - 0.5, 0, math.random() - 0.5) * 0.4):spawn()
 						end
 					end
 				end
 			end
-			
-			
+
+
 
 			ship.model:setMatrix(finalMat)
 		end

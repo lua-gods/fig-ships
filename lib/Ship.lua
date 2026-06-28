@@ -54,16 +54,14 @@ local SHIP_PARTS = {}
 local PAINT_BLOCKS = {}
 for index, id in ipairs(client.getRegistry("minecraft:block")) do
 	local id = id:match("minecraft:(.*)")
-	if id then
-		
-	
-		
+	if id:find("concrete") or id:find("wool") or id:find("teracotta") or id:find("glazed") then
 		local block = world.newBlock(id)
 		if block:isOpaque() and block:isSolidBlock() then
 			PAINT_BLOCKS[#PAINT_BLOCKS + 1] = id
 		end
 	end
 end
+table.sort(PAINT_BLOCKS)
 
 
 --────  TYPINGS  ────────────────────────────────────────────────────────--
@@ -235,13 +233,13 @@ function Ship:realizeInstances()
 	return self
 end
 
-function Ship:paintPart(id, block)
+function Ship:paintPart(id, index)
 	local part = self.parts[id]
 	if not part then return end
-	part.paint = block
-	local tex = world.newBlock(block):getTextures()
-	local path = tex[next(tex)]
-	if path then
+	part.paint = PAINT_BLOCKS[index]
+	if part.paint then
+		local tex = world.newBlock(part.paint):getTextures()
+		local path = tex[next(tex)]
 		path = path[1]
 		part.model:setPrimaryTexture("RESOURCE", path .. ".png")
 	else

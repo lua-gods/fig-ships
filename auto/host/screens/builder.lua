@@ -3,7 +3,7 @@ local Macros = require("lib.GNMacros")
 local Tween = require("lib.GNtween")
 local Ship = require("lib.Ship")
 local PanCamera = require("lib.PanCamera")
-require("auto.host.ocean") -- make sure sea level is declared
+local Music = require("auto.host.music")
 
 --────  CONFIG  ────────────────────────────────────────────────────────--
 
@@ -115,86 +115,15 @@ local function fancyTitle(title, desc)
 	}
 end
 
-local PAINT_BLOCKS = {}
-
-for index, id in ipairs(client.getRegistry("minecraft:block")) do
-	local block = world.newBlock(id)
-	if block:isOpaque() and block:isSolidBlock() then
-		PAINT_BLOCKS[#PAINT_BLOCKS + 1] = id
-	end
-end
-
--- source: imitfu https://www.geeksforgeeks.org/dsa/introduction-to-levenshtein-distance/
-local function levenshtein(a, b)
-	local lenA = #a
-	local lenB = #b
-
-	local matrix = {}
-
-	for i = 0, lenA do
-		matrix[i] = {}
-		matrix[i][0] = i
-	end
-
-	for j = 0, lenB do
-		matrix[0][j] = j
-	end
-
-	for i = 1, lenA do
-		for j = 1, lenB do
-			local cost = (a:sub(i, i) == b:sub(j, j)) and 0 or 1
-
-			matrix[i][j] = math.min(
-				matrix[i - 1][j] + 1, -- deletion
-				matrix[i][j - 1] + 1, -- insertion
-				matrix[i - 1][j - 1] + cost -- substitution
-			)
-		end
-	end
-
-	return matrix[lenA][lenB]
-end
-
-local function similarity(a, b)
-	a = a:lower()
-	b = b:lower()
-
-	local distance = levenshtein(a, b)
-	local maxLen = math.max(#a, #b)
-
-	if maxLen == 0 then
-		return 1
-	end
-
-	return 1 - (distance / maxLen)
-end
-
-local function fuzzySearch(query)
-	local results = {}
-
-	for _, word in ipairs(PAINT_BLOCKS) do
-		table.insert(results, {
-			word = word,
-			score = similarity(query, word),
-		})
-	end
-
-	table.sort(results, function(a, b)
-		return a.score > b.score
-	end)
-
-	return results
-end
 
 --──── Main Macro ────────────────────────────────────────────--
 
 return Macros.new(function(events, ...)
-
 	local mode = 0
 	local paint
-	local shipPos = client:getCameraPos()
+	local shipPos = player:getPos()
 	shipPos.y = math.max(SEA_LEVEL, world.getHeight(shipPos.x, shipPos.z, "WORLD_SURFACE")) + MARGIN
-	
+
 	local lHoveredPart ---@type Ship.Part?
 	local hoveredPart ---@type Ship.Part?
 	local selectedPart ---@type Ship.Part?
@@ -202,14 +131,16 @@ return Macros.new(function(events, ...)
 	local placementDir
 
 	PanCamera.setPos(shipPos)
-	
-	SHIP.model:pos(shipPos * 16)
 
+	SHIP.model:pos(shipPos * 16)
+	:setVisible(true)
 
 	local preview
 
 	local buildPage = action_wheel:newPage("Builder")
 	local paintPage = action_wheel:newPage("Paint")
+
+
 
 	local function clearPreview()
 		if preview then
@@ -217,170 +148,11 @@ return Macros.new(function(events, ...)
 		end
 	end
 
-	action_wheel:setPage()
-	events.ENTITY_INIT:register(function()
-		--──── PAINT PAGE ────────────────────────────────────────────--
-
-		local query = ""
-		local actionCount = 0
-		local function updatePaintPage()
-			-- clear
-			if actionCount > 1 then
-				for i = 2, actionCount, 1 do
-					paintPage:action(i, nil)
-				end
-			end
-			actionCount = 1
-			for index, data in ipairs(fuzzySearch(query or "")) do
-				actionCount = actionCount + 1
-				local id = data.word
-				paintPage:newAction()
-					 :setItem(id)
-					 :setTitle(id)
-					 :onLeftClick(function(self)
-						 paint = id
-					 end)
-			end
-		end
-
-		local toggle = false
-		local function search(active)
-			query = ""
-			if active then
-				events.CHAR_TYPED:register(function(char, modifiers, codepoint)
-					if action_wheel:isEnabled() then
-						query = query .. char
-						updatePaintPage()
-					end
-				end, "search")
-				events.KEY_PRESS:register(function(key, state, modifiers)
-					if action_wheel:isEnabled() then
-						if state ~= 0 then
-							if key == 259 then -- erase
-								query = query:sub(1, -2)
-							end
-							updatePaintPage()
-						end
-					end
-				end, "search")
-			else
-				events.CHAR_TYPED:remove("search")
-				events.KEY_PRESS:remove("search")
-			end
-		end
-		paintPage:newAction()
-			 :setItem(namedHead("tex;textures.return"))
-			 :setTitle(fancyTitle("Return", "Return back to build page"))
-			 :onLeftClick(function(self)
-				 action_wheel:setPage(buildPage)
-				 search(false)
-			 end)
-
-
-		--──── BUILD PAGE ────────────────────────────────────────────--
-
-		---@type Action[]
-		local actions = {}
-
-		local function updateHighlight()
-			for key, value in pairs(actions) do
-				value:setColor(key == mode and SELECTED_COLOR or nil)
-				value:setHoverColor(key == mode and SELECTED_COLOR or nil)
-			end
-		end
-
-		buildPage:newAction()
-			 :setItem(namedHead("tex;textures.deploy"))
-			 :setTitle(fancyTitle("Dploy Ship", "Spawn your ship into the world!"))
-			 :onLeftClick(function(self)
-				 playSound("minecraft:block.fence_gate.open", 0.2)
-				 playSound("minecraft:block.dispenser.launch", 0.3)
-				 playSound("minecraft:block.piston.contract", 0.3)
-				 setScreen("deploy")
-			 end)
-
-
-		buildPage:newAction()
-			 :setItem(namedHead("tex;textures.load"))
-			 :setTitle(fancyTitle("Load Ship", "Load saved Ship"))
-			 :onLeftClick(function(self)
-				 local buffer = data:createBuffer()
-				 buffer:readFromStream(file:openReadStream(SHIP_SAVE_PATH))
-				 buffer:setPosition(0)
-				 local shipData = buffer:readByteArray(buffer:available())
-				 SHIP:unpackData(shipData)
-				 playSound("minecraft:block.trial_spawner.eject_item")
-			 end)
-
-
-		buildPage:newAction()
-			 :setItem(namedHead("tex;textures.save"))
-			 :setTitle(fancyTitle("Save Ship", "Save the ship"))
-			 :onLeftClick(function(self)
-				 local shipData = SHIP:packData()
-				 local buffer = data:createBuffer(#shipData)
-				 buffer:writeByteArray(shipData)
-				 buffer:setPosition(0)
-				 buffer:writeToStream(file:openWriteStream(SHIP_SAVE_PATH))
-				 playSound("minecraft:block.trial_spawner.open_shutter")
-			 end)
-
-		actions[-1] = buildPage:newAction()
-			 :setItem(namedHead("tex;textures.paint"))
-			 :setTitle(fancyTitle("Paint",
-				 "Chose a color and select a part to paint\n[TIP]: type to search for the block!"))
-			 :onLeftClick(function(self)
-				 mode = -1
-				 action_wheel:setPage(paintPage)
-				 updateHighlight()
-				 updatePaintPage()
-				 search(true)
-				 clearPreview()
-			 end)
-
-		actions[0] = buildPage:newAction()
-			 :setItem(namedHead("tex;textures.select"))
-			 :setTitle(fancyTitle("Select", "Select a part of the ship"))
-			 :onLeftClick(function(self)
-				 mode = 0
-				 updateHighlight()
-				 clearPreview()
-			 end)
-
-		for i, part in pairs(Ship.getShipPartIdentities()) do
-			if not part.locked then
-				local action = buildPage:newAction()
-					 :setItem(namedHead(part.name))
-					 :setTitle(fancyTitle(part.name, part.desc or "..."))
-					 :onLeftClick(function(self)
-						 mode = i
-						 if preview then
-							 preview:remove()
-						 end
-						 preview = part.model:copy("preview"):scale(SHIP.scale):setParentType("WORLD"):moveTo(models)
-							  :setOpacity(0.2)
-						 updateHighlight()
-					 end)
-				actions[i] = action
-			end
-		end
-
-		-- generate new probability
-		action_wheel:setPage(buildPage)
-	end)
-
-	renderer:setCameraPivot(shipPos)
-	renderer:renderRightArm(false)
-	renderer:renderLeftArm(false)
-	renderer:setRenderCrosshair(false)
-	host:setUnlockCursor(true)
-
-
 	---@param model ModelPart
 	---@param r Vector3|number?
 	---@param g number?
 	---@param b number?
-	local function HighlightPart(model, r, g, b)
+	local function highlightPart(model, r, g, b)
 		if model then
 			if r then
 				model:setPrimaryRenderType("CUTOUT")
@@ -389,15 +161,185 @@ return Macros.new(function(events, ...)
 				---@diagnostic disable-next-line: param-type-mismatch
 				model:setSecondaryColor(r, g, b)
 			else
-				model:setPrimaryRenderType("TRANSLUCENT")
+				model:setPrimaryRenderType("CUTOUT")
 				model:setSecondaryTexture("SECONDARY")
 			end
 		end
 	end
 
+	local function setSelectedPart(part)
+		if selectedPart then
+			highlightPart(selectedPart.model)
+		end
+		if selectedPart ~= part then
+			selectedPart = part
+			if selectedPart then
+				highlightPart(selectedPart.model, SELECTED_COLOR)
+				PanCamera.setPos((selectedPart.pos * SHIP.scale) / 16 + shipPos)
+			else
+				playSound("minecraft:entity.item_frame.remove_item")
+				local center = vec(0, 0, 0)
+				for index, value in ipairs(SHIP.parts) do
+					center = center + value.pos * SHIP.scale
+				end
+				PanCamera.setPos((center / #SHIP.parts) / 16 + shipPos)
+			end
+		end
+	end
+
+	action_wheel:setPage()
+	--──── PAINT PAGE ────────────────────────────────────────────--
+
+	paintPage:newAction()
+		 :setItem(namedHead("tex;textures.return"))
+		 :setTitle(fancyTitle("Return", "Return back to build page"))
+		 :onLeftClick(function(self)
+			 action_wheel:setPage(buildPage)
+		 end)
+	paintPage:newAction()
+		 :setItem(namedHead("tex;textures.none"))
+		 :setTitle(fancyTitle("None", "Remove paint off of the ship"))
+		 :onLeftClick(function(self)
+			 paint = nil
+			 action_wheel:setPage(buildPage)
+		 end)
+	for i, id in ipairs(Ship.getPaintBlocks()) do
+		local index = i -- turns out i is a reference number, not a constant
+		local name = id
+			 :gsub("_", " ")
+			 :gsub("%s%S", string.upper)
+			 :gsub("^%l", string.upper)
+		paintPage:newAction()
+			 :setItem(id)
+			 :setTitle(fancyTitle(name, "Paint the ship with " .. name))
+			 :onLeftClick(function(self)
+				 paint = index
+				 action_wheel:setPage(buildPage)
+			 end)
+	end
+
+
+
+	--──── BUILD PAGE ────────────────────────────────────────────--
+
+	---@type Action[]
+	local actions = {}
+
+	local function updateHighlight()
+		for key, value in pairs(actions) do
+			value:setColor(key == mode and SELECTED_COLOR or nil)
+			value:setHoverColor(key == mode and SELECTED_COLOR or nil)
+		end
+	end
+
+	buildPage:newAction()
+		 :setItem(namedHead("tex;textures.deploy"))
+		 :setTitle(fancyTitle("Dploy Ship", "Spawn your ship into the world!"))
+		 :onLeftClick(function(self)
+			 playSound("minecraft:block.fence_gate.open", 0.2)
+			 playSound("minecraft:block.dispenser.launch", 0.3)
+			 playSound("minecraft:block.piston.contract", 0.3)
+			 setScreen("deploy")
+		 end)
+
+
+	buildPage:newAction()
+		 :setItem(namedHead("tex;textures.load"))
+		 :setTitle(fancyTitle("Load Ship", "Load saved Ship"))
+		 :onLeftClick(function(self)
+			 local buffer = data:createBuffer()
+			 buffer:readFromStream(file:openReadStream(SHIP_SAVE_PATH))
+			 buffer:setPosition(0)
+			 local shipData = buffer:readByteArray(buffer:available())
+			 SHIP:unpackData(shipData)
+			 playSound("minecraft:block.trial_spawner.eject_item")
+		 end)
+
+
+	buildPage:newAction()
+		 :setItem(namedHead("tex;textures.save"))
+		 :setTitle(fancyTitle("Save Ship", "Save the ship"))
+		 :onLeftClick(function(self)
+			 local shipData = SHIP:packData()
+			 local buffer = data:createBuffer(#shipData)
+			 buffer:writeByteArray(shipData)
+			 buffer:setPosition(0)
+			 buffer:writeToStream(file:openWriteStream(SHIP_SAVE_PATH))
+			 playSound("minecraft:block.trial_spawner.open_shutter")
+		 end)
+
+	actions[-1] = buildPage:newAction()
+		 :setItem(namedHead("tex;textures.paint"))
+		 :setTitle(fancyTitle("Paint",
+			 "Chose a color and select a part to paint\n[TIP]: type to search for the block!"))
+		 :onLeftClick(function(self)
+			 mode = -1
+			 setSelectedPart()
+			 action_wheel:setPage(paintPage)
+			 updateHighlight()
+			 clearPreview()
+		 end)
+
+	actions[0] = buildPage:newAction()
+		 :setItem(namedHead("tex;textures.select"))
+		 :setTitle(fancyTitle("Select", "Select a part of the ship"))
+		 :onLeftClick(function(self)
+			 mode = 0
+			 updateHighlight()
+			 clearPreview()
+		 end)
+		 
+		 
+	config:setName("GN.ship")
+	local isMusicActive = config:load("music") and true or false
+	buildPage:newAction()
+		 :setItem(namedHead("tex;textures.music"))
+		 :setTitle(fancyTitle("Toggle Music", "dispicable swines music"))
+		 :setToggled(isMusicActive)
+		 :onToggle(function (state, self)
+			Music:setActive(state)
+		 end)
+		 Music:setActive(isMusicActive)
+	buildPage:newAction()
+		 :setItem(namedHead("tex;textures.return"))
+		 :setTitle(fancyTitle("Return", "Exit back to the main menu"))
+		 :onLeftClick(function(self)
+			 setScreen("main")
+		 end)
+
+	for i, part in pairs(Ship.getShipPartIdentities()) do
+		if not part.locked then
+			local action = buildPage:newAction()
+				 :setItem(namedHead(part.name))
+				 :setTitle(fancyTitle(part.name, part.desc or "..."))
+				 :onLeftClick(function(self)
+					 mode = i
+					 if preview then
+						 preview:remove()
+					 end
+					 preview = part.model:copy("preview"):scale(SHIP.scale):setParentType("WORLD")
+						  :moveTo(models)
+						  :setOpacity(0.2)
+					 updateHighlight()
+				 end)
+			actions[i] = action
+		end
+	end
+
+	-- generate new probability
+	action_wheel:setPage(buildPage)
+
+	renderer:setCameraPivot(shipPos)
+	renderer:renderRightArm(false)
+	renderer:renderLeftArm(false)
+	renderer:setRenderCrosshair(false)
+	host:setUnlockCursor(true)
+
+
+
+
 	SHIP:newPart(1)
 	events.WORLD_RENDER:register(function(delta)
-
 		local title = "..."
 
 		if mode == 0 then
@@ -409,12 +351,12 @@ return Macros.new(function(events, ...)
 		end
 
 		host:setActionbar(title)
-		
-		
+
+
 		if not notObscured() then return end
 		local mpos = client:getMousePos()
 		local pos = screenToWorldSpace(0.1, mpos, getRealFov())
-		local to = screenToWorldSpace(50, mpos, getRealFov())
+		local to = screenToWorldSpace(300, mpos, getRealFov())
 		local aabb, hitPos, side, index = raycast:aabb(pos - shipPos, to - shipPos, SHIP.hitbox)
 		if hitPos and index and hitPos and side then
 			placementPos = (hitPos / SHIP.scale) + face2dir[side] * 0.5
@@ -454,15 +396,15 @@ return Macros.new(function(events, ...)
 		end
 		if hoveredPart ~= lHoveredPart then
 			if lHoveredPart then
-				HighlightPart(lHoveredPart.model)
+				highlightPart(lHoveredPart.model)
 			end
 
 			if selectedPart then
-				HighlightPart(selectedPart.model, SELECTED_COLOR)
+				highlightPart(selectedPart.model, SELECTED_COLOR)
 			end
 
 			if hoveredPart then
-				HighlightPart(hoveredPart.model, HOVER_COLOR)
+				highlightPart(hoveredPart.model, HOVER_COLOR)
 			end
 			lHoveredPart = hoveredPart
 		end
@@ -471,27 +413,11 @@ return Macros.new(function(events, ...)
 
 
 
-	local function setSelectedPart(part)
-		if selectedPart then
-			HighlightPart(selectedPart.model)
-		end
-		if selectedPart ~= part then
-			selectedPart = part
-			if selectedPart then
-				HighlightPart(selectedPart.model, SELECTED_COLOR)
-				PanCamera.setPos((selectedPart.pos * SHIP.scale) / 16 + shipPos)
-			else
-				playSound("minecraft:entity.item_frame.remove_item")
-				local center = vec(0, 0, 0)
-				for index, value in ipairs(SHIP.parts) do
-					center = center + value.pos * SHIP.scale
-				end
-				PanCamera.setPos((center / #SHIP.parts) / 16 + shipPos)
-			end
-		end
-	end
 
-	
+
+	for key, value in pairs(KEYBINDS) do
+		value.press = function () return true end
+	end
 
 
 	KEYBINDS.select:onPress(function(modifiers, self)
@@ -500,16 +426,18 @@ return Macros.new(function(events, ...)
 				if hoveredPart then
 					setSelectedPart(hoveredPart)
 					playSound("minecraft:entity.item_frame.add_item", 0.9)
-					HighlightPart(hoveredPart.model, PRESSED_COLOR)
+					highlightPart(hoveredPart.model, PRESSED_COLOR)
 				else
 					setSelectedPart()
 				end
 			elseif mode == -1 then -- PAINT MODE
 				if hoveredPart then
 					if paint then
-						SHIP:paintPart(hoveredPart.id, paint)
 						playSound("minecraft:block.honey_block.place")
+					else
+						playSound("minecraft:item.axe.scrape")
 					end
+					SHIP:paintPart(hoveredPart.id, paint)
 				end
 			else -- BUILD MODE
 				if placementPos and not SHIP:isOccupied(placementPos * 16) then
@@ -532,9 +460,9 @@ return Macros.new(function(events, ...)
 	end):onRelease(function(modifiers, self)
 		if hoveredPart and notObscured() then
 			if hoveredPart == selectedPart then
-				HighlightPart(hoveredPart.model, SELECTED_COLOR)
+				highlightPart(hoveredPart.model, SELECTED_COLOR)
 			else
-				HighlightPart(hoveredPart.model, HOVER_COLOR)
+				highlightPart(hoveredPart.model, HOVER_COLOR)
 			end
 		end
 	end)
@@ -546,6 +474,7 @@ return Macros.new(function(events, ...)
 				playSound("minecraft:block.iron_trapdoor.close", 0.5)
 				playSound("minecraft:entity.generic.eat")
 				SHIP:removePart(selectedPart.id)
+				setSelectedPart()
 			else
 				playSound("minecraft:entity.breeze.deflect")
 			end
@@ -557,6 +486,7 @@ return Macros.new(function(events, ...)
 			mode = 0
 			playSound("minecraft:entity.breeze.deflect")
 			clearPreview()
+			updateHighlight()
 			return true
 		else
 			if selectedPart then
@@ -571,7 +501,7 @@ return Macros.new(function(events, ...)
 		SHIP:unpackData(data)
 	end)
 
-	
+
 
 	events.ON_EXIT:register(function()
 		renderer:renderRightArm()
@@ -580,17 +510,22 @@ return Macros.new(function(events, ...)
 		renderer:setCameraPos()
 		renderer:setCameraPivot()
 		renderer:setRenderCrosshair()
+		clearPreview()
+		setSelectedPart()
+		SHIP.model:setVisible(false)
+		PanCamera.setPos()
+		isMusicActive = Music.isActive
+		Music:setActive(false)
+		config:setName("GN.ship")
+		config:save("music", isMusicActive)
 		host:setUnlockCursor()
-		
-		KEYBINDS.select.press = nil
-		KEYBINDS.select.release = nil
-		KEYBINDS.vineboom.press = nil
-		KEYBINDS.delete.press = nil
-		KEYBINDS.esc.press = nil
+
+		for key, value in pairs(KEYBINDS) do
+			value.press = nil
+			value.release = nil
+		end
 	end)
 
 
 	--────  SKULL SHINANIGANS  ────────────────────────────────────────────────────────--
-
-	
 end)

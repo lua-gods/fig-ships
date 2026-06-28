@@ -193,7 +193,7 @@ events.WORLD_RENDER:register(function()
 				if (lvel:length() * 0.05) > 0.5 then
 					particles["end_rod"]:pos(pos.x,height,pos.z):gravity(0.1):lifetime(40):scale(8):velocity(lvel * 0.04 + vec(math.random()-0.5,0,math.random()-0.5)*0.4):spawn()
 					if not body.wetPoints[index] then
-						sounds:playSound("minecraft:entity.player.splash.high_speed",pos,0.2,math.lerp(0.3,0.4,math.random())):attenuation(3)
+						sounds:playSound("minecraft:entity.player.splash.high_speed",pos,0.2,math.lerp(0.3,0.4,math.random())):attenuation(4)
 						body.wetPoints[index] = true
 					end
 				end
