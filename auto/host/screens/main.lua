@@ -90,10 +90,24 @@ return Macros.new(function(events, ...)
 				{
 					text = "\n:banana_rotata_y: Figura Contest 2026 Submission",
 				},
+				{
+					text = "\nVisit: ",
+				},
+				{
+					text= "https://github.com/lua-gods/fig-ships/",
+					color="blue",
+					underline = true,
+				},
+				{
+					text = " for more info!\n(click to copy link)",
+				},
 			},
 		}
 	)
 		 :item("minecraft:paper")
+		 :onLeftClick(function (self)
+			host:setClipboard("https://github.com/lua-gods/fig-ships/")
+		 end)
 
 
 

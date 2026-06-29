@@ -25,4 +25,4 @@ function setScreen(name)
 	end
 end
 
-setScreen("builder")
+setScreen("main")
