@@ -4,6 +4,9 @@ SHIP_SAVE_EXTENSION = ".gnws"
 -- height from the ground/sea
 SEA_MARGIN = 5
 YOUR_MOM = math.huge -- coconut
+
+
+
 local u1, u2, u3, u4 = client.uuidToIntArray(player:getUUID())
 if client.compareVersions(client:getVersion(), "1.20.6") >= 0 then
 	function namedHead(name)
@@ -19,4 +22,9 @@ else
 		item = item:format(u1, u2, u3, u4, name)
 		return item
 	end
+end
+
+
+function getSeaLevel(pos)
+	return math.max(SEA_LEVEL, world.getHeight(pos.x,pos.z, "WORLD_SURFACE"))
 end

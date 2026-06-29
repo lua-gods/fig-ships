@@ -8,7 +8,8 @@ local KEYBINDS = {
 	forward = keybinds:fromVanilla("key.forward"),
 	back = keybinds:fromVanilla("key.back"),
 	left = keybinds:fromVanilla("key.left"),
-	right = keybinds:fromVanilla("key.right")
+	right = keybinds:fromVanilla("key.right"),
+	up = keybinds:fromVanilla("key.jump")
 }
 
 return KEYBINDS

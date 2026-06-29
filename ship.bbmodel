@@ -16447,7 +16447,7 @@
 			"uuid": "6c1c4779-eb32-c0ee-903e-f5d69984a559"
 		},
 		{
-			"name": "Propeller",
+			"name": "PropellerR",
 			"color": 0,
 			"origin": [176, 2.5, 8],
 			"rotation": [180, 0, 180],
@@ -28261,7 +28261,7 @@
 			"visibility": true,
 			"autouv": 0,
 			"isOpen": false,
-			"primary_selected": true
+			"primary_selected": false
 		},
 		{
 			"name": "Rudder",
@@ -28790,7 +28790,7 @@
 			"visibility": true,
 			"autouv": 0,
 			"isOpen": false,
-			"primary_selected": false
+			"primary_selected": true
 		},
 		{
 			"name": "Thruster",
@@ -29000,7 +29000,7 @@
 			"primary_selected": false
 		},
 		{
-			"name": "Propeller Base",
+			"name": "Propeller Fan",
 			"uuid": "9c56f5b7-db9b-2ebd-5b64-a5ae7c946c0e",
 			"export": true,
 			"locked": false,
@@ -29112,7 +29112,7 @@
 			"visibility": true,
 			"autouv": 0,
 			"isOpen": false,
-			"primary_selected": false
+			"primary_selected": true
 		}
 	],
 	"outliner": [
@@ -29283,11 +29283,6 @@
 					"children": ["f4d395a8-155a-4bdc-20e1-434c822570b3", "842e369b-cc32-5540-480a-12f759f7dc4d"]
 				},
 				{
-					"uuid": "1a1fd37a-9d3a-c869-2fab-b8fbf7e4fe98",
-					"isOpen": false,
-					"children": ["ad1ef6ea-1112-283e-8503-16b8eea818e6", "d6a951ee-438c-c1f9-6ba3-772e9aa05718"]
-				},
-				{
 					"uuid": "0d97ed23-ff4d-bc00-d3cc-f32d5a792571",
 					"isOpen": false,
 					"children": ["7d7c6c8c-f84f-f2c7-40f9-5a2e7b98b481", "e2cce23a-dcb0-45de-789d-7361135e26fe"]
@@ -29328,17 +29323,14 @@
 					"children": ["6a054d5f-e696-295f-e23d-aec0c21044b6", "d2639430-044f-06b2-e0ec-42438b141abe"]
 				},
 				{
-					"uuid": "9c56f5b7-db9b-2ebd-5b64-a5ae7c946c0e",
+					"uuid": "da7d6e04-5958-ebd4-4f5e-9a8997207043",
 					"isOpen": false,
-					"children": [
-						"6c1c4779-eb32-c0ee-903e-f5d69984a559",
-						{
-							"uuid": "8c1b3281-35b2-07e0-84d4-3e2dab98dbfc",
-							"isOpen": true,
-							"children": ["bed04187-2f35-62cb-e97c-6bf7874e0917"]
-						},
-						"47ad071e-06d6-5041-921f-48c5ed93d8e8"
-					]
+					"children": ["b7e27608-a83d-c73c-5c84-0142ce108a67", "2fcb8504-2da6-b462-2bfd-b24e68dd85c8"]
+				},
+				{
+					"uuid": "b5b7114c-196c-0d91-da04-0fb44400fbb2",
+					"isOpen": false,
+					"children": ["12be8774-8962-ce20-7019-64b528abb4f1", "171047a3-e2fc-0796-5df9-33e059f604df"]
 				},
 				{
 					"uuid": "ade7ecea-662c-c098-85e9-5a1700508dce",
@@ -29354,14 +29346,22 @@
 					]
 				},
 				{
-					"uuid": "da7d6e04-5958-ebd4-4f5e-9a8997207043",
+					"uuid": "1a1fd37a-9d3a-c869-2fab-b8fbf7e4fe98",
 					"isOpen": false,
-					"children": ["b7e27608-a83d-c73c-5c84-0142ce108a67", "2fcb8504-2da6-b462-2bfd-b24e68dd85c8"]
+					"children": ["ad1ef6ea-1112-283e-8503-16b8eea818e6", "d6a951ee-438c-c1f9-6ba3-772e9aa05718"]
 				},
 				{
-					"uuid": "b5b7114c-196c-0d91-da04-0fb44400fbb2",
+					"uuid": "9c56f5b7-db9b-2ebd-5b64-a5ae7c946c0e",
 					"isOpen": false,
-					"children": ["12be8774-8962-ce20-7019-64b528abb4f1", "171047a3-e2fc-0796-5df9-33e059f604df"]
+					"children": [
+						"6c1c4779-eb32-c0ee-903e-f5d69984a559",
+						{
+							"uuid": "8c1b3281-35b2-07e0-84d4-3e2dab98dbfc",
+							"isOpen": true,
+							"children": ["bed04187-2f35-62cb-e97c-6bf7874e0917"]
+						},
+						"47ad071e-06d6-5041-921f-48c5ed93d8e8"
+					]
 				}
 			]
 		}

@@ -103,7 +103,7 @@ events.RENDER:register(function(_, ctx, matrix)
 					local height = math.max(pos.y / 16, SEA_LEVEL)
 					local lvel = (finalMat:apply(pos) - lastFinalMat:apply(pos)) / 16
 					if SEA_LEVEL + 1 >= height then
-						if lvel:length() > 0.5 then
+						if lvel:length() > 0.1 then
 							particles["end_rod"]
 							:pos(pos.x / 16, height, pos.z / 16)
 							:gravity(0.1)

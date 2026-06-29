@@ -7,7 +7,7 @@ local zLib = require("lib.zlib")
 local SHIP_SCALE = 8
 local THROTTLE_STRENGTH = 0.001
 local STEER_STRENGTH = 0.0003
-
+local PROPELLER_STRENGTH = 0.8
 
 ---@param string string
 ---@return string
@@ -34,7 +34,8 @@ local function toBase64(string)
 	return out
 end
 
-
+local fan = 0
+local activatedThrusters = {}
 
 ---@type table<string,Ship.Part.Identity>
 local PARTS_ENTRY = {
@@ -42,25 +43,28 @@ local PARTS_ENTRY = {
 	["Hull"] = {},
 	["Back Hull"] = {
 		process = function (part, ship, body)
-			if KEYBINDS.forward:isPressed() then
-				local p = body:getPos()
-				local v = body.mat:applyDir(0, 0, -THROTTLE_STRENGTH * ((#body.points) ^ 2))
-				body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
-			end
-			if KEYBINDS.back:isPressed() then
-				local p = body:getPos()
-				local v = body.mat:applyDir(0, 0, THROTTLE_STRENGTH * ((#body.points) ^ 2))
-				body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
-			end
-			if KEYBINDS.left:isPressed() then
-				local speed = body.mat:copy():invert():applyDir(body.lvel)
-				local up = body.mat:applyDir(0, 1, 0)
-				body:setAVel(up,-speed.z*STEER_STRENGTH)
-			end
-			if KEYBINDS.right:isPressed() then
-				local speed = body.mat:copy():invert():applyDir(body.lvel)
-				local up = body.mat:applyDir(0, 1, 0)
-				body:setAVel(up,speed.z*STEER_STRENGTH)
+			local pos = part.model:partToWorldMatrix():apply()
+			if pos.y <= getSeaLevel(pos) then
+				if KEYBINDS.forward:isPressed() then
+					local p = body:getPos()
+					local v = body.mat:applyDir(0, 0, -THROTTLE_STRENGTH * ((#body.points) ^ 2))
+					body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
+				end
+				if KEYBINDS.back:isPressed() then
+					local p = body:getPos()
+					local v = body.mat:applyDir(0, 0, THROTTLE_STRENGTH * ((#body.points) ^ 2))
+					body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
+				end
+				if KEYBINDS.left:isPressed() then
+					local speed = body.mat:copy():invert():applyDir(body.lvel)
+					local up = body.mat:applyDir(0, 1, 0)
+					body:setAVel(up,-speed.z*STEER_STRENGTH)
+				end
+				if KEYBINDS.right:isPressed() then
+					local speed = body.mat:copy():invert():applyDir(body.lvel)
+					local up = body.mat:applyDir(0, 1, 0)
+					body:setAVel(up,speed.z*STEER_STRENGTH)
+				end
 			end
 		end,
 		desc="Lets you throttle and steer your ship!"
@@ -80,6 +84,39 @@ local PARTS_ENTRY = {
 
 	["Cannon"] = {},
 	["Schwerer Gustav"] = {},
+	["Propeller Fan"] = {
+		process = function (part, ship, body)
+			if KEYBINDS.up:isPressed() then
+				local up = body.mat:applyDir(0, PROPELLER_STRENGTH, 0)
+				local pos = part.model:partToWorldMatrix():apply()
+				body:applyImpulse(pos.x,pos.y,pos.z,up.x,up.y,up.z)
+				fan = fan + 1
+				part.model["Propeller Fan"].wings:setRot(0,fan * 5,0)
+			end
+		end,
+		desc="press [Space] to activate the propeller fan and lift off!"
+	},
+	["Thruster"] = {
+		process = function (part, ship, body)
+			if KEYBINDS.forward:isPressed() then
+				local mat = part.model:partToWorldMatrix()
+				local pos = mat:apply(0,8,0)
+				local dir = mat:applyDir(0,0,-10)
+				if not activatedThrusters[part.id] then
+					activatedThrusters[part.id] = true
+        			sounds["item.firecharge.use"]:pos(pos):volume(0.2):pitch(0.4):attenuation(8):play()
+        			sounds["item.firecharge.use"]:pos(pos):volume(0.2):pitch(0.3):attenuation(8):play()
+        			sounds["item.firecharge.use"]:pos(pos):volume(0.2):pitch(0.2):attenuation(8):play()
+        			sounds["item.firecharge.use"]:pos(pos):volume(0.2):pitch(0.15):attenuation(8):play()
+        			sounds["item.firecharge.use"]:pos(pos):volume(0.2):pitch(0.1):attenuation(8):play()
+				end
+				particles["end_rod"]:pos(pos):velocity(-dir):lifetime(10):setColor(vectors.hexToRGB("#FFD986")):scale(30):spawn()
+				body:applyImpulse(pos.x,pos.y,pos.z,dir.x,dir.y,dir.z)
+			else
+				activatedThrusters[part.id] = nil
+			end
+		end
+	}
 }
 
 local SHIP_PARTS = {}
@@ -266,17 +303,12 @@ end
 
 function Ship:paintPart(id, index)
 	local part = self.parts[id]
-	print(part,id)
 	if not part then return end
 	if PAINT_BLOCKS[index] then
 		local tex = world.newBlock(PAINT_BLOCKS[index]):getTextures()
 		local path = tex[next(tex)]
 		path = path[1]
-		print(path)
-		print(part.model)
 		part.model:setPrimaryTexture("RESOURCE", path .. ".png")
-		print(part.model:getPrimaryTexture())
-		print("---")
 		part.paint = index
 	else
 		part.model:setPrimaryTexture("PRIMARY")
