@@ -99,6 +99,7 @@ return Macros.new(function (events, ...)
 			value.release = nil
 		end
 		body.model = nil
+		body:free()
 		host.unlockCursor = false
 		renderer:renderRightArm()
 		renderer:renderLeftArm()

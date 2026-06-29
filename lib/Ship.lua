@@ -5,8 +5,8 @@ local KEYBINDS = require("auto.host.keybinds")
 local zLib = require("lib.zlib")
 
 local SHIP_SCALE = 8
-local THROTTLE_STRENGTH = 2
-local STEER_STRENGTH = 0.04
+local THROTTLE_STRENGTH = 0.001
+local STEER_STRENGTH = 0.0003
 
 
 ---@param string string
@@ -43,24 +43,32 @@ local PARTS_ENTRY = {
 	["Back Hull"] = {
 		process = function (part, ship, body)
 			if KEYBINDS.forward:isPressed() then
-			local p = body:getPos()
-			local v = body.mat:applyDir(0, 0, -THROTTLE_STRENGTH)
-			body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
-		end
-		if KEYBINDS.left:isPressed() then
-			local p = body.mat:apply(-(#body.points)^1.5*STEER_STRENGTH, 0, 0)
-			local v = body.mat:applyDir(0, 0, 1)
-			body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
-		end
-		if KEYBINDS.right:isPressed() then
-			local p = body.mat:apply((#body.points)^1.5*STEER_STRENGTH, 0, 0)
-			local v = body.mat:applyDir(0, 0, 1)
-			body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
-		end
-		end
+				local p = body:getPos()
+				local v = body.mat:applyDir(0, 0, -THROTTLE_STRENGTH * ((#body.points) ^ 2))
+				body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
+			end
+			if KEYBINDS.back:isPressed() then
+				local p = body:getPos()
+				local v = body.mat:applyDir(0, 0, THROTTLE_STRENGTH * ((#body.points) ^ 2))
+				body:applyImpulse(p.x, p.y, p.z, v.x, v.y, v.z)
+			end
+			if KEYBINDS.left:isPressed() then
+				local speed = body.mat:copy():invert():applyDir(body.lvel)
+				local up = body.mat:applyDir(0, 1, 0)
+				body:setAVel(up,-speed.z*STEER_STRENGTH)
+			end
+			if KEYBINDS.right:isPressed() then
+				local speed = body.mat:copy():invert():applyDir(body.lvel)
+				local up = body.mat:applyDir(0, 1, 0)
+				body:setAVel(up,speed.z*STEER_STRENGTH)
+			end
+		end,
+		desc="Lets you throttle and steer your ship!"
 	},
 
-	["Control Room"] = {},
+	["Control Room"] = {
+		desc="does nothing"
+	},
 
 	["Accommodation Floor 2"] = {},
 	["Accommodation Floor 1"] = {},
@@ -75,7 +83,6 @@ local PARTS_ENTRY = {
 }
 
 local SHIP_PARTS = {}
-
 
 local PAINT_BLOCKS = {}
 for index, id in ipairs(client.getRegistry("minecraft:block")) do
@@ -162,7 +169,7 @@ for index, model in ipairs(models.ship.Parts:getChildren()) do
 		 :setParentType("SKULL")
 		 :setVisible(false)
 
-	local parts = PARTS_ENTRY[name]
+	local parts = PARTS_ENTRY[name] or {}
 
 
 	SHIP_PARTS[index] = parts
@@ -212,9 +219,8 @@ function Ship:newPart(id, pos, rot)
 	pos = pos or vec(0, 0, 0)
 	rot = rot or 0
 	local identity = SHIP_PARTS[id]
-	if identity then
+	if identity and not self:isOccupied(pos.x, pos.y, pos.z) then
 		local id = #self.parts + 1
-
 		---@type Ship.Part
 		local part = {
 			id = id,
@@ -260,12 +266,17 @@ end
 
 function Ship:paintPart(id, index)
 	local part = self.parts[id]
+	print(part,id)
 	if not part then return end
 	if PAINT_BLOCKS[index] then
 		local tex = world.newBlock(PAINT_BLOCKS[index]):getTextures()
 		local path = tex[next(tex)]
 		path = path[1]
+		print(path)
+		print(part.model)
 		part.model:setPrimaryTexture("RESOURCE", path .. ".png")
+		print(part.model:getPrimaryTexture())
+		print("---")
 		part.paint = index
 	else
 		part.model:setPrimaryTexture("PRIMARY")
@@ -323,8 +334,7 @@ function Ship:refreshModel()
 end
 
 function Ship:demolish()
-
-	for index, part in ipairs(self.parts) do
+	for index, part in pairs(self.parts) do
 		part.model:remove()
 	end
 	self.parts = {}
@@ -338,7 +348,7 @@ function Ship:packData()
 	for index, part in ipairs(self.parts) do
 		buffer:write(part.identity.id)
 		buffer:write(part.pos.x+128)
-		buffer:write(part.pos.y)
+		buffer:write(part.pos.y*4)
 		buffer:write(part.pos.z+128)
 		buffer:write(part.rot)
 		buffer:write(part.paint)
@@ -362,7 +372,7 @@ function Ship:unpackData(packedData)
 		local id = buffer:read()
 		if id then
 			local x = buffer:read()-128
-			local y = buffer:read()
+			local y = buffer:read()/4
 			local z = buffer:read()-128
 			local rot = buffer:read()
 			local paint = buffer:read()

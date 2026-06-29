@@ -123,10 +123,6 @@ return Macros.new(function(events, ...)
 
 	local buildPage = action_wheel:newPage("Builder")
 	local paintPage = action_wheel:newPage("Paint")
-	local loadPage = action_wheel:newPage("Load Ship")
-	local savePage = action_wheel:newPage("Save Ship")
-
-
 
 	local function clearPreview()
 		if preview then
@@ -305,7 +301,7 @@ return Macros.new(function(events, ...)
 			end)
 		end
 		
-		for _, name in ipairs(file:list(SHIP_SAVE_PATH)) do
+		for i, name in ipairs(file:list(SHIP_SAVE_PATH)) do
 			if name:find(SHIP_SAVE_EXTENSION .. "$") then
 				spaceLeft = (spaceLeft - 1) % 8
 				local buffer = data:createBuffer()
@@ -478,7 +474,6 @@ return Macros.new(function(events, ...)
 		end
 	end
 
-	-- generate new probability
 	action_wheel:setPage(buildPage)
 
 	renderer:setCameraPivot(shipPos)
@@ -678,6 +673,11 @@ return Macros.new(function(events, ...)
 		config:save("music", isMusicActive)
 		host:setUnlockCursor()
 		clearInstructions()
+		
+		for key, value in pairs(SHIP.parts) do
+			highlightPart(value.model)
+		end
+		
 		for key, value in pairs(KEYBINDS) do
 			value.press = nil
 			value.release = nil

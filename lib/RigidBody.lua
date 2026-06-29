@@ -26,6 +26,7 @@ local face2dir = {
 
 
 ---@class GN.RigidBody
+---@field id integer
 ---@field model ModelPart
 ---@field mass number
 ---@field intertia Vector3
@@ -140,6 +141,10 @@ function RigidBody:raycast(pos, dir)
 	return mat:apply(hitpos), hitDir
 end
 
+function RigidBody:free()
+	rigidBodies[self.id] = nil
+end
+
 -- ignore this
 local MODEL = models:newPart("boat", "WORLD")
 MODEL:newBlock("display")
@@ -220,17 +225,6 @@ events.WORLD_RENDER:register(function()
 		end
 	end
 end)
---[ [
 
-
-
-
-
-events.TICK:register(function()
-	--particles["end_rod"]:pos(hitPos):spawn():lifetime(0)
-end)
-
-
---]]
 
 return RigidBody
