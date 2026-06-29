@@ -1,14 +1,40 @@
 ---@diagnostic disable: missing-fields
 
-local SHIP_SCALE = 8
 local GNCommon = require("lib.GNcommon")
+local KEYBINDS = require("auto.host.keybinds")
+local zLib = require("lib.zlib")
 
+local SHIP_SCALE = 8
 local THROTTLE_STRENGTH = 2
 local STEER_STRENGTH = 0.04
 
-local KEYBINDS = require("auto.host.keybinds")
 
-local zLib = require("lib.zlib")
+---@param string string
+---@return string
+local function parseBase64(string)
+	local buffer = data:createBuffer(#string)
+	local ok, result = pcall(buffer.writeBase64, buffer, string)
+	if not ok then return "" end
+	buffer:setPosition(0)
+	local out = buffer:readByteArray(buffer:available())
+	buffer:close()
+	return out
+end
+
+
+---@param string string
+---@return string
+local function toBase64(string)
+	local buffer = data:createBuffer(#string)
+	local ok, result = pcall(buffer.writeByteArray, buffer, string)
+	if not ok then return "" end
+	buffer:setPosition(0)
+	local out = buffer:readBase64(buffer:available())
+	buffer:close()
+	return out
+end
+
+
 
 ---@type table<string,Ship.Part.Identity>
 local PARTS_ENTRY = {
@@ -64,6 +90,7 @@ end
 table.sort(PAINT_BLOCKS)
 
 
+
 --────  TYPINGS  ────────────────────────────────────────────────────────--
 
 ---@class ShipAPI
@@ -102,8 +129,6 @@ Ship.__index = Ship
 ---@field paint integer
 
 --────  PARSING  ────────────────────────────────────────────────────────--
-
-local YOUR_MOM = math.huge
 
 local SKULL_ROOT = models:newPart("SkullRoot", "SKULL")
 for index, model in ipairs(models.ship.Parts:getChildren()) do
@@ -320,13 +345,15 @@ function Ship:packData()
 	end
 	buffer:setPosition(0)
 	local out = buffer:readByteArray()
+	
 	out = zLib.Deflate.Compress(out)
 	buffer:close()
-	return out
+	return toBase64(out)
 end
 
 function Ship:unpackData(packedData)
 	self:demolish()
+	packedData = parseBase64(packedData)
 	packedData = zLib.Deflate.Decompress(packedData)
 	local buffer = data:createBuffer()
 	buffer:writeByteArray(packedData)

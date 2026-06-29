@@ -150,6 +150,6 @@ events.WORLD_TICK:register(function ()
 	timer = timer -1
 	if timer < 0 then
 		timer = math.random(30,40)
-		playSound("Ocean "..math.random(1,3),rand(0.7,1.2),0.1)
+		playSound("Ocean "..math.random(1,2),rand(0.7,1.2),0.1)
 	end
 end)

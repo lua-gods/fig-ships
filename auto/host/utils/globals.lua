@@ -1,5 +1,9 @@
 SEA_LEVEL = 103.9
-
+SHIP_SAVE_PATH = "GNShips"
+SHIP_SAVE_EXTENSION = ".gnws"
+-- height from the ground/sea
+SEA_MARGIN = 5
+YOUR_MOM = math.huge -- coconut
 local u1, u2, u3, u4 = client.uuidToIntArray(player:getUUID())
 if client.compareVersions(client:getVersion(), "1.20.6") >= 0 then
 	function namedHead(name)

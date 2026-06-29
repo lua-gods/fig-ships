@@ -46,6 +46,9 @@ local function toPlainText(rawJsonText)
 	end
 end
 
+---@type table<any,Ship>
+local shipCache = {}
+
 events.SKULL_RENDER:register(function(delta, block, item, entity, ctx)
 		if item then
 			local name = toPlainText(item:getName())
@@ -57,6 +60,37 @@ events.SKULL_RENDER:register(function(delta, block, item, entity, ctx)
 				ICON:setPrimaryTexture("CUSTOM", textures[tex])
 					 :setVisible(true)
 				lastVisible = ICON
+			elseif name:find("^ship;") then
+				local data = name:sub(6,-1)
+				if not shipCache[data] then
+					local ship = Ship.new()
+					ship:unpackData(data)
+					ship.model:setParentType("SKULL")
+					shipCache[data] = ship
+					ship.model:setVisible(true)
+					
+					--- calculate radius
+					local min = vec(YOUR_MOM, YOUR_MOM, YOUR_MOM)
+					local max = vec(-YOUR_MOM, -YOUR_MOM, -YOUR_MOM)
+					for index, part in ipairs(ship.hitbox) do
+						min.x = math.min(min.x, part[1].x)
+						min.y = math.min(min.y, part[1].y)
+						min.z = math.min(min.z, part[1].z)
+						max.x = math.max(max.x, part[2].x)
+						max.y = math.max(max.y, part[2].y)
+						max.z = math.max(max.z, part[2].z)
+					end
+					min = min / ship.scale
+					max = max / ship.scale
+					
+					local diameter = (min-max):length()
+					ship.model:scale(0.4/diameter)
+					lastVisible = ship.model
+				else
+					local ship = shipCache[data]
+					ship.model:setVisible(true)
+					lastVisible = ship.model
+				end
 			else
 				local partIcon = icons[name]
 				if partIcon then

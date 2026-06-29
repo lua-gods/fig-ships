@@ -30,7 +30,6 @@ local function fancyTitle(title, desc)
 end
 
 
-local YOUR_MOM = math.huge
 
 return Macros.new(function (events, ...)
 	

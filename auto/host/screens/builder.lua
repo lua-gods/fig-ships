@@ -7,10 +7,6 @@ local Music = require("auto.host.music")
 
 --────  CONFIG  ────────────────────────────────────────────────────────--
 
--- height from the ground/sea
-local MARGIN = 5
-
-local SHIP_SAVE_PATH = "warship.gnws"
 
 
 
@@ -80,11 +76,6 @@ end
 
 
 
-
-
-
-
-
 local function notObscured()
 	return not (action_wheel:isEnabled()) and (not host:getScreen()) or host:isChatOpen()
 end
@@ -113,7 +104,8 @@ return Macros.new(function(events, ...)
 	local mode = 0
 	local paint
 	local shipPos = player:getPos()
-	shipPos.y = math.max(SEA_LEVEL, world.getHeight(shipPos.x, shipPos.z, "WORLD_SURFACE")) + MARGIN
+	shipPos.y = math.max(SEA_LEVEL, world.getHeight(shipPos.x, shipPos.z, "WORLD_SURFACE")) +
+		 SEA_MARGIN
 
 	local lHoveredPart ---@type Ship.Part?
 	local hoveredPart ---@type Ship.Part?
@@ -125,12 +117,14 @@ return Macros.new(function(events, ...)
 	PanCamera.setPos(shipPos)
 
 	SHIP.model:pos(shipPos * 16)
-	:setVisible(true)
+		 :setVisible(true)
 
 	local preview
 
 	local buildPage = action_wheel:newPage("Builder")
 	local paintPage = action_wheel:newPage("Paint")
+	local loadPage = action_wheel:newPage("Load Ship")
+	local savePage = action_wheel:newPage("Save Ship")
 
 
 
@@ -178,25 +172,25 @@ return Macros.new(function(events, ...)
 			end
 		end
 	end
-	
+
 	--────  USER INTERFACE  ────────────────────────────────────────────────────────--
 	local INSTRUCTIONS_HUD = models:newPart("ihud", "HUD")
 	local ACTIONBAR_HUD = models:newPart("abhud", "HUD")
-	
-	
+
+
 	local label = ACTIONBAR_HUD:newText("msg")
-	
+
 	label:setAlignment("CENTER")
-	:setOutline(true)
-	
+		 :setOutline(true)
+
 	local function msg(text)
 		label:setText(text)
 	end
-	
+
 	local rows = {}
-	
+
 	local i = 0
-	
+
 	local function clearInstructions(category)
 		if category then
 			if rows[category] then
@@ -213,80 +207,126 @@ return Macros.new(function(events, ...)
 			end
 		end
 	end
-	
+
 	local function realizeInstructionRows()
 		local i = 0
 		for key, group in pairs(rows) do
 			for key, row in pairs(group) do
 				i = i + 1
-				row:setPos(-3,i * 13,0)
+				row:setPos(-3, i * 13, 0)
 			end
 		end
 	end
-	
-	
-	local function newInstruction(key,desc,category)
+
+
+	local function newInstruction(key, desc, category)
 		category = category or "default"
 		i = i + 1
-		local row = INSTRUCTIONS_HUD:newPart("row"..i)
+		local row = INSTRUCTIONS_HUD:newPart("row" .. i)
 		if key:find("^textures") then
 			local tex = textures[key]
 			local dim = tex:getDimensions()
-			row:newSprite("key"..i)
-			:setTexture(tex,dim.x,dim.y)
-			:setPos(dim.x+4,1)
+			row:newSprite("key" .. i)
+				 :setTexture(tex, dim.x, dim.y)
+				 :setPos(dim.x + 4, 1)
 		else
-			
-			row:newText("key"..i)
-			:setText('{"text":"'..key..'","color":"#535353"}')
-			:alignment("RIGHT")
-			:setPos(5,1)
-			
+			row:newText("key" .. i)
+				 :setText('{"text":"' .. key .. '","color":"#535353"}')
+				 :alignment("RIGHT")
+				 :setPos(5, 1)
+
 			local tex = textures["textures.btn"]
 			local dim = tex:getDimensions()
-			row:newSprite("keybg"..i)
-			:setTexture(tex,dim.x,dim.y)
-			:setPos(dim.x+3,2,3)
+			row:newSprite("keybg" .. i)
+				 :setTexture(tex, dim.x, dim.y)
+				 :setPos(dim.x + 3, 2, 3)
 		end
-		
-		row:newText("desc"..i)
-		:setText(desc)
-		:alignment("LEFT")
-		:setOutline(true)
-		
+
+		row:newText("desc" .. i)
+			 :setText(desc)
+			 :alignment("LEFT")
+			 :setOutline(true)
+
 		rows[category] = rows[category] or {}
 		table.insert(rows[category], row)
-		
+
 		realizeInstructionRows()
 	end
 
-	events.WORLD_RENDER:register(function (delta)
+	events.WORLD_RENDER:register(function(delta)
 		local windowSize = client:getScaledWindowSize()
-		INSTRUCTIONS_HUD:setPos(-windowSize.x * 0.5 - 107,-windowSize.y)
+		INSTRUCTIONS_HUD:setPos(-windowSize.x * 0.5 - 107, -windowSize.y)
 		ACTIONBAR_HUD:setPos(-windowSize.x * 0.5, -windowSize.y + 60)
 	end)
-	
-	newInstruction("textures.rmb","Rotate Camera")
-	newInstruction("textures.mw","Zoom")
-	
+
+	newInstruction("textures.rmb", "Rotate Camera")
+	newInstruction("textures.mw", "Zoom")
+
 	local lastMode = 67
-	events.TICK:register(function ()
+	events.TICK:register(function()
 		if lastMode ~= mode then
 			clearInstructions("tools")
 			if mode == 0 then
-				newInstruction("textures.lmb","Select","tools")
-				newInstruction("x","Delete","tools")
+				newInstruction("textures.lmb", "Select", "tools")
+				newInstruction("x", "Delete", "tools")
 			elseif mode == -1 then
-				newInstruction("textures.lmb","Paint","tools")
+				newInstruction("textures.lmb", "Paint", "tools")
 			else
-				newInstruction("textures.lmb","Place","tools")
-				newInstruction("x","Delete","tools")
-				newInstruction("r","Rotate","tools")
+				newInstruction("textures.lmb", "Place", "tools")
+				newInstruction("x", "Delete", "tools")
+				newInstruction("r", "Rotate", "tools")
 			end
 			lastMode = mode
 		end
 	end)
-	
+
+	--──── SAVE PAGE ────────────────────────────────────────────--
+
+	local function makeShipsPage(callback)
+		local page = action_wheel:newPage("Ships")
+		page:newAction()
+			 :setItem(namedHead("tex;textures.return"))
+			 :setTitle(fancyTitle("Return", "Return to build page"))
+			 :onLeftClick(function(self)
+				 action_wheel:setPage(buildPage)
+			 end)
+
+		if not file:isDirectory(SHIP_SAVE_PATH) then
+			file:mkdir(SHIP_SAVE_PATH)
+		end
+
+		local spaceLeft = 7
+		
+		local slots = {}
+		for i = 1, 7, 1 do
+			slots[i] = page:newAction()
+			:onLeftClick(function(self)
+				 callback(nil, i)
+			end)
+		end
+		
+		for _, name in ipairs(file:list(SHIP_SAVE_PATH)) do
+			if name:find(SHIP_SAVE_EXTENSION .. "$") then
+				spaceLeft = (spaceLeft - 1) % 8
+				local buffer = data:createBuffer()
+				local index = tonumber(name:match("([%d]+)%"..SHIP_SAVE_EXTENSION))
+				if index then
+					buffer:readFromStream(file:openReadStream(SHIP_SAVE_PATH .. "/" .. name))
+					buffer:setPosition(0)
+					local shipData = buffer:readByteArray(buffer:available())
+					slots[index]
+						 :setItem(namedHead("ship;" .. shipData))
+						 :setTitle(fancyTitle(name:gsub(SHIP_SAVE_EXTENSION, ""),
+							 "Load " .. name:gsub(SHIP_SAVE_EXTENSION, "")))
+						 :onLeftClick(function(self)
+							 callback(shipData, i)
+						 end)
+				end
+			end
+		end
+		return page
+	end
+
 	--──── PAINT PAGE ────────────────────────────────────────────--
 	action_wheel:setPage()
 
@@ -334,7 +374,7 @@ return Macros.new(function(events, ...)
 
 	buildPage:newAction()
 		 :setItem(namedHead("tex;textures.deploy"))
-		 :setTitle(fancyTitle("Dploy Ship", "Spawn your ship into the world!"))
+		 :setTitle(fancyTitle("Deploy Ship", "Spawn your ship into the world!"))
 		 :onLeftClick(function(self)
 			 playSound("minecraft:block.fence_gate.open", 0.2)
 			 playSound("minecraft:block.dispenser.launch", 0.3)
@@ -347,12 +387,19 @@ return Macros.new(function(events, ...)
 		 :setItem(namedHead("tex;textures.load"))
 		 :setTitle(fancyTitle("Load Ship", "Load saved Ship"))
 		 :onLeftClick(function(self)
-			 local buffer = data:createBuffer()
-			 buffer:readFromStream(file:openReadStream(SHIP_SAVE_PATH))
-			 buffer:setPosition(0)
-			 local shipData = buffer:readByteArray(buffer:available())
-			 SHIP:unpackData(shipData)
-			 playSound("minecraft:block.trial_spawner.eject_item")
+			 --local buffer = data:createBuffer()
+			 --buffer:readFromStream(file:openReadStream(SHIP_SAVE_PATH ..
+			 --"/" .. "ship" .. SHIP_SAVE_EXTENSION))
+			 --buffer:setPosition(0)
+			 --local shipData = buffer:readByteArray(buffer:available())
+			 --SHIP:unpackData(shipData)
+			 action_wheel:setPage(makeShipsPage(function(data, id)
+				if data then
+					playSound("minecraft:block.trial_spawner.eject_item")
+					SHIP:unpackData(data)
+					action_wheel:setPage(buildPage)
+				end
+			 end))
 		 end)
 
 
@@ -360,12 +407,17 @@ return Macros.new(function(events, ...)
 		 :setItem(namedHead("tex;textures.save"))
 		 :setTitle(fancyTitle("Save Ship", "Save the ship"))
 		 :onLeftClick(function(self)
-			 local shipData = SHIP:packData()
-			 local buffer = data:createBuffer(#shipData)
-			 buffer:writeByteArray(shipData)
-			 buffer:setPosition(0)
-			 buffer:writeToStream(file:openWriteStream(SHIP_SAVE_PATH))
-			 playSound("minecraft:block.trial_spawner.open_shutter")
+			action_wheel:setPage(makeShipsPage(function(_, id)
+				playSound("minecraft:block.trial_spawner.open_shutter")
+				 local shipData = SHIP:packData()
+				 local buffer = data:createBuffer(#shipData)
+				 buffer:writeByteArray(shipData)
+				 buffer:setPosition(0)
+				 buffer:writeToStream(file:openWriteStream(SHIP_SAVE_PATH ..
+					 "/" .. "ship" .. id .. SHIP_SAVE_EXTENSION))
+				 buffer:close()
+				 action_wheel:setPage(buildPage)
+			 end))
 		 end)
 
 	actions[-1] = buildPage:newAction()
@@ -388,18 +440,18 @@ return Macros.new(function(events, ...)
 			 updateHighlight()
 			 clearPreview()
 		 end)
-		 
-		 
+
+
 	config:setName("GN.ship")
 	local isMusicActive = config:load("music") and true or false
 	buildPage:newAction()
 		 :setItem(namedHead("tex;textures.music"))
 		 :setTitle(fancyTitle("Toggle Music", "dispicable swines music"))
 		 :setToggled(isMusicActive)
-		 :onToggle(function (state, self)
-			Music:setActive(state)
+		 :onToggle(function(state, self)
+			 Music:setActive(state)
 		 end)
-		 Music:setActive(isMusicActive)
+	Music:setActive(isMusicActive)
 	buildPage:newAction()
 		 :setItem(namedHead("tex;textures.return"))
 		 :setTitle(fancyTitle("Return", "Exit back to the main menu"))
@@ -444,11 +496,11 @@ return Macros.new(function(events, ...)
 		local title = "..."
 
 		if mode == 0 then
-			title = (":cursor_1: Select Mode")
+			title = ("Select Mode")
 		elseif mode == -1 then
-			title = (":palette: Paint Mode")
+			title = ("Paint Mode")
 		else
-			title = (":hammer_big: Placing " .. Ship.getShipPartIdentities()[mode].name)
+			title = ("Placing " .. Ship.getShipPartIdentities()[mode].name)
 		end
 		if title ~= lastTitle then
 			lastTitle = title
@@ -479,7 +531,7 @@ return Macros.new(function(events, ...)
 		end
 
 		placementRot = placementRot
-		
+
 		if preview then
 			if placementPos then
 				if SHIP:isOccupied(placementPos * 16) then
@@ -488,7 +540,7 @@ return Macros.new(function(events, ...)
 					preview:setColor(1, 1, 1)
 				end
 				preview:setPos((placementPos * SHIP.scale + shipPos) * 16)
-				:setRot(0,placementRot*90,0)
+					 :setRot(0, placementRot * 90, 0)
 			else
 				preview:setPos(0, -6942067, 0)
 			end
@@ -521,7 +573,7 @@ return Macros.new(function(events, ...)
 
 
 	for key, value in pairs(KEYBINDS) do
-		value.press = function () return true end
+		value.press = function() return true end
 	end
 
 
@@ -579,7 +631,6 @@ return Macros.new(function(events, ...)
 				playSound("minecraft:block.iron_trapdoor.close", 0.5)
 				playSound("minecraft:entity.generic.eat")
 				SHIP:removePart(selectedPart.id)
-				setSelectedPart()
 			else
 				playSound("minecraft:entity.breeze.deflect")
 			end
@@ -601,7 +652,7 @@ return Macros.new(function(events, ...)
 		end
 	end)
 
-	KEYBINDS.rotate:onPress(function (modifiers, self)
+	KEYBINDS.rotate:onPress(function(modifiers, self)
 		placementRot = (placementRot + 1) % 4
 		return true
 	end)
@@ -619,10 +670,10 @@ return Macros.new(function(events, ...)
 		PanCamera.setPos()
 		isMusicActive = Music.isActive
 		Music:setActive(false)
-		
+
 		ACTIONBAR_HUD:remove()
 		INSTRUCTIONS_HUD:remove()
-		
+
 		config:setName("GN.ship")
 		config:save("music", isMusicActive)
 		host:setUnlockCursor()
