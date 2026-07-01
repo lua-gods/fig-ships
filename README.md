@@ -27,3 +27,8 @@ GN Macros Library | Allows for togglable instantiatable chunks of code| https://
 GN Syncing Library | Automatic Syncing of data between clients through pings| https://github.com/lua-gods/GNs-Avatar-5/blob/main/lib/GNSync.lua
 GN Event Library | OOP Based Event hook system| https://github.com/lua-gods/GNs-Avatar-5/blob/main/lib/GNEvent.lua
 GN Tween Library | Implementation of all easings | https://github.com/lua-gods/GNs-Avatar-5/blob/main/lib/tween.lua
+
+> [!TIP]
+>Making stuff like this takes ALOOOT of effort than you might think, feel free to leave a tip to get me more motivated and create even more crazier things thats free for all c:  
+> [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L3L719367F)
+>
