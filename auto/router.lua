@@ -1,3 +1,4 @@
+require("auto.globals")
 if host:isHost() then
 	events.ENTITY_INIT:register(function()
 		

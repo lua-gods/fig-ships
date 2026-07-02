@@ -7,7 +7,8 @@ YOUR_MOM = math.huge -- coconut
 
 
 
-local u1, u2, u3, u4 = client.uuidToIntArray(player:getUUID())
+events.ENTITY_INIT:register(function ()
+	local u1, u2, u3, u4 = client.uuidToIntArray(player:getUUID())
 if client.compareVersions(client:getVersion(), "1.20.6") >= 0 then
 	function namedHead(name)
 		local item =
@@ -23,6 +24,7 @@ else
 		return item
 	end
 end
+end)
 
 
 function getSeaLevel(pos)
