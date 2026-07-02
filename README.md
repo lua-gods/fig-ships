@@ -29,6 +29,6 @@ GN Event Library | OOP Based Event hook system| https://github.com/lua-gods/GNs-
 GN Tween Library | Implementation of all easings | https://github.com/lua-gods/GNs-Avatar-5/blob/main/lib/tween.lua
 
 > [!TIP]
->Making stuff like this takes ALOOOT of effort than you might think, feel free to leave a tip to get me more motivated and create even more crazier things thats free for all c:  
+>Making stuff like this takes ALOOOT of effort than you might think, so I do commissions! this is my way of making something out of the free things I make, if you're interested in commissions or just want to say hi. Check me out in the FiguraMC Discord!
 > [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L3L719367F)
 >
