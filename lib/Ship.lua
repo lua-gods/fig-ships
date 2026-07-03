@@ -124,7 +124,7 @@ local SHIP_PARTS = {}
 local PAINT_BLOCKS = {}
 for index, id in ipairs(client.getRegistry("minecraft:block")) do
 	local id = id:match("minecraft:(.*)")
-	if id:find("concrete") or id:find("wool") or id:find("teracotta") or id:find("glazed") then
+	if id and id:find("concrete") or id:find("wool") or id:find("teracotta") or id:find("glazed") then
 		local block = world.newBlock(id)
 		if block:isOpaque() and block:isSolidBlock() then
 			PAINT_BLOCKS[#PAINT_BLOCKS + 1] = id
